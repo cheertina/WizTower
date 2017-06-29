@@ -8,7 +8,7 @@ var Game =  {
         // Any necessary initialization will go here.
 		
 		var displayOptions = {
-			//fontSize: 28,
+			fontSize: 28,
 			width: this._screenWidth,
             height: this._screenHeight
 		};
@@ -24,12 +24,9 @@ var Game =  {
                 if (game._currentScreen !== null) {
                     // Send the event type and data to the screen
                     game._currentScreen.handleInput(event, e);
-					//clear and redraw the screen
-					game._display.clear();
-					game._currentScreen.render(game._display);
-                }
+				}
             });
-        };
+        }
         // Bind keyboard input events
         bindEventToScreen('keydown');
         //bindEventToScreen('keyup');

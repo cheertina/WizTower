@@ -40,8 +40,8 @@ Game.Screen.playScreen = {
 	enter: function() {
 		console.log( "Entered playScreen.")
 		var map = [];
-		let mapWidth  = 250;
-		let mapHeight = 250;
+		let mapWidth  = 500;
+		let mapHeight = 500;
 		// Create the map array, and fill it with null tiles
 		for (var x = 0; x < mapWidth; x++) {
 			// Create the nested array for the y values;
@@ -80,14 +80,12 @@ Game.Screen.playScreen = {
 				}
 			});
 		}	
-		// Create map from the tiles
-		this._map = new Game.Map(map);
-		
-		// Create the player object and set the position
+		// Create map from the tiles and our player object
 		this._player = new Game.Entity(Game.PlayerTemplate);
-		var position = this._map.getRandomFloorPosition();
-		this._player.setX(position.x);
-		this._player.setY(position.y);
+		this._map = new Game.Map(map, this._player);
+		// Start the map's engine
+		this._map.getEngine().start();
+		
 		
 	},//enter()
     
@@ -123,16 +121,23 @@ Game.Screen.playScreen = {
 				);
 			}
 		}
-		// Render the player
-		display.draw(
-			this._player.getX() - topLeftX,
-			this._player.getY() - topLeftY,
-			this._player.getChar(true),
-			this._player.getForeground(true),
-			this._player.getBackground(true)
-			);
-		
-		
+		// Render the entities
+		var entities = this._map.getEntities();
+		for (var i = 0; i < entities.length; i++){
+			let entity = entities[i];
+			//only render it if it actually fits in the viewport
+			if (entity.getX() >= topLeftX && entity.getY() >= topLeftY &&
+                entity.getX() < topLeftX + screenWidth &&
+                entity.getY() < topLeftY + screenHeight) {
+                display.draw(
+                    entity.getX() - topLeftX, 
+                    entity.getY() - topLeftY,    
+                    entity.getChar(), 
+                    entity.getForeground(), 
+                    entity.getBackground()
+                );
+            }
+		}		
     }, //render()
 	
     handleInput: function(inputType, inputData) {
@@ -143,18 +148,20 @@ Game.Screen.playScreen = {
                 Game.switchScreen(Game.Screen.winScreen);
             } else if (inputData.keyCode === ROT.VK_ESCAPE) {
                 Game.switchScreen(Game.Screen.loseScreen);
-            }
-			// Movement
-			switch(inputData.keyCode){
-				case ROT.VK_NUMPAD1: this.move(-1,  1); break;
-				case ROT.VK_NUMPAD2: this.move( 0,  1); break;
-				case ROT.VK_NUMPAD3: this.move( 1,  1); break;
-				case ROT.VK_NUMPAD4: this.move(-1,  0); break;
-				case ROT.VK_NUMPAD5: this.move( 0,  0); break;
-				case ROT.VK_NUMPAD6: this.move( 1,  0); break;
-				case ROT.VK_NUMPAD7: this.move(-1, -1); break;
-				case ROT.VK_NUMPAD8: this.move( 0, -1); break;
-				case ROT.VK_NUMPAD9: this.move( 1, -1); break;				
+            } else {
+				// Movement
+				switch(inputData.keyCode){
+					case ROT.VK_NUMPAD1: this.move(-1,  1); break;
+					case ROT.VK_NUMPAD2: this.move( 0,  1); break;
+					case ROT.VK_NUMPAD3: this.move( 1,  1); break;
+					case ROT.VK_NUMPAD4: this.move(-1,  0); break;
+					case ROT.VK_NUMPAD5: this.move( 0,  0); break;
+					case ROT.VK_NUMPAD6: this.move( 1,  0); break;
+					case ROT.VK_NUMPAD7: this.move(-1, -1); break;
+					case ROT.VK_NUMPAD8: this.move( 0, -1); break;
+					case ROT.VK_NUMPAD9: this.move( 1, -1); break;				
+				}
+				this._map.getEngine().unlock();
 			}
         }    
     }, // handleInput()
