@@ -34,7 +34,7 @@ var Game =  {
         bindEventToScreen('keydown');
         //bindEventToScreen('keyup');
         //bindEventToScreen('keypress');
-    },	//init
+    }, 	//init
 	
 	// Basic getters
 	getDisplay: function() { return this._display; },

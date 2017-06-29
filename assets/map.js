@@ -21,3 +21,20 @@ Game.Map.prototype.getTile = function (x, y) {
 		return this._tiles[x][y] || Game.Tile.nullTile;
 	}
 }
+
+Game.Map.prototype.dig = function(x, y) {
+	// If the tile is diggable, make it a floor
+	if (this.getTile(x, y).isDiggable()) {
+		this._tiles[x][y] = Game.Tile.floorTile;
+	}
+}
+
+Game.Map.prototype.getRandomFloorPosition = function() {
+	// Randomly select a floor tile
+	let x, y;
+	do{
+		x = Math.floor(Math.random() * this._width);
+		y = Math.floor(Math.random() * this._height);
+	} while(this.getTile(x, y) != Game.Tile.floorTile);
+	return {x: x, y: y};
+}

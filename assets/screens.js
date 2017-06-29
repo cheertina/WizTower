@@ -31,12 +31,7 @@ Game.Screen.startScreen = {
 // Define our playing screen
 Game.Screen.playScreen = {
 	_map: null,
-    _centerX: 0,	// viewport center
-	_centerY: 0,
-	
-	//DEBUG VAR FOR MESSIGN WITH DIFFERENT MAPMAKERS
-	
-	
+    _player: null,
 	
 	
 	// For now we create the map on entering the level - eventually we'll make them persist
@@ -56,7 +51,8 @@ Game.Screen.playScreen = {
 			}
 		}
 		
-		let mapStyle = "nethack";
+		let mapStyle = null;
+		//mapStyle = "nethack";
 		if(mapStyle == "nethack"){			
 			let generator = new ROT.Map.Uniform(mapWidth, mapHeight, {timeLimit: 5000});
 			generator.create(function(x,y,v) {
@@ -87,6 +83,12 @@ Game.Screen.playScreen = {
 		// Create map from the tiles
 		this._map = new Game.Map(map);
 		
+		// Create the player object and set the position
+		this._player = new Game.Entity(Game.PlayerTemplate);
+		var position = this._map.getRandomFloorPosition();
+		this._player.setX(position.x);
+		this._player.setY(position.y);
+		
 	},//enter()
     
 	exit: function() { console.log("Exited play screen."); },
@@ -99,32 +101,36 @@ Game.Screen.playScreen = {
 		
 		// make sure our viewport doesn't try to scroll off the map to the left
 		// and don't scroll so far to the right that you don't have a full screen to display
-		let topLeftX = Math.max(0, this._centerX - (screenWidth / 2));
+		let topLeftX = Math.max(0, this._player.getX() - (screenWidth / 2));
 		topLeftX = Math.min(topLeftX, this._map.getWidth() - screenWidth);
 		
-		let topLeftY = Math.max(0, this._centerY - (screenHeight / 2));
+		let topLeftY = Math.max(0, this._player.getY() - (screenHeight / 2));
 		topLeftY = Math.min(topLeftY, this._map.getHeight() - screenHeight);
 		console.log("topLeft x,y: "+topLeftX + ", "+topLeftY);
 		
+		// Iterate through all visile map cells
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
 			for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
-				let glyph = this._map.getTile(x,y).getGlyph();
+				//Fetch the glyph for the tile and render it to the screen
+				// at the offest position
+				let tile = this._map.getTile(x, y);
 				display.draw(
 					x - topLeftX,
 					y - topLeftY,
-					glyph.getChar(),
-					glyph.getForeground(),
-					glyph.getBackground()
+					tile.getChar(),
+					tile.getForeground(),
+					tile.getBackground()
 				);
 			}
 		}
-		// Render the cursor
+		// Render the player
 		display.draw(
-			this._centerX - topLeftX,
-			this._centerY - topLeftY,
-			'@',
-			'white',
-			'black');
+			this._player.getX() - topLeftX,
+			this._player.getY() - topLeftY,
+			this._player.getChar(true),
+			this._player.getForeground(true),
+			this._player.getBackground(true)
+			);
 		
 		
     }, //render()
@@ -155,15 +161,11 @@ Game.Screen.playScreen = {
 	
 	// Move the "center" of viewport around the map
 	move: function(dX, dY) {
-		// Positive dX means movement right
-		// negative is left
-		// 0 is none
-		this._centerX = Math.max(0, Math.min(this._map.getWidth() - 1, this._centerX + dX));
 		
-		// Positive dY is movement down
-		// Negative is up
-		// 0 is none
-		this._centerY = Math.max(0, Math.min(this._map.getHeight() - 1, this._centerY + dY));
+		let newX = this._player.getX() + dX;
+		let newY = this._player.getY() + dY;
+		this._player.tryMove(newX, newY, this._map);
+		
 	}	// move()
 }
 
