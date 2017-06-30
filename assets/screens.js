@@ -40,8 +40,8 @@ Game.Screen.playScreen = {
 	enter: function() {
 		console.log( "Entered playScreen.")
 		var map = [];
-		let mapWidth  = 100;
-		let mapHeight = 50;
+		let mapWidth  = 160;
+		let mapHeight = 48;
 		// Create the map array, and fill it with null tiles
 		for (var x = 0; x < mapWidth; x++) {
 			// Create the nested array for the y values;
@@ -142,12 +142,14 @@ Game.Screen.playScreen = {
 		let messages = this._player.getMessages();
 		var messageY = 0;
 		for (let i = 0; i < messages.length; i++ ) {
-			messageY += display.drawText(0, messageY, '%c{white}%b{gray}' + messages[i]);
+			messageY += display.drawText(0, messageY, '%c{white}%b{black}' + messages[i]);
 		}
 		
 		// Show hp
-		let stats = '%c{white}%b{black}';
-		stats += vsprintf('HP: %d/%d ', [this._player.getHp(), this._player.getMaxHp()]);
+		let stats = '%c{white}%b{dimgray}';
+		stats += vsprintf('HP: %d/%d   (%d, %d)',
+			[this._player.getHp(), this._player.getMaxHp(),
+			this._player.getX(), this._player.getY()]);
 		display.drawText(0, screenHeight, stats);
 		
 		
