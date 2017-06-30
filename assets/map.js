@@ -15,10 +15,10 @@ Game.Map = function(tiles, player){
 	
 	// add the player and some random fungi
 	this.addEntityAtRandomPosition(player);
-	for (let i = 0; i < 1000; i++){
-		this.addEntityAtRandomPosition(new Game.Entity(Game.FungusTemplate));
+	for (let i = 0; i < 50; i++){
+		this.addEntityAtRandomPosition(new Game.Entity(Game.Templates.Fungus));
 	}
-};
+} // Constructor
 
 // Standard getters
 Game.Map.prototype.getWidth = function() { return this._width; }
@@ -36,8 +36,25 @@ Game.Map.prototype.getEntityAt = function(x, y){
 		}
 	}
 	return false;
-}
+} // getEntityAt
 
+Game.Map.prototype.getEntitiesWithinRadius = function(centerX, centerY, radius){
+	results = [];
+	// Determine our bounds
+	let leftX 	= centerX - radius;
+	let rightX 	= centerX + radius;
+	let topY 	= centerY - radius;
+	let bottomY = centerY + radius;
+	for (let i = 0; i < this._entities.kength; i++) {
+		if (this._entities[i].getX() >= leftX 	&&
+			this._entities[i].getX() <= rightX 	&&
+		    this._entities[i].getY() >= topY 	&&
+		    this._entities[i].getY() <= bottomY ) {
+			results.push(this._entities[i]);
+		}
+	}
+	return results;
+} // getEntitiesWithinRadius
 
 //get the tile for a given coordinate set
 Game.Map.prototype.getTile = function (x, y) {
@@ -47,7 +64,7 @@ Game.Map.prototype.getTile = function (x, y) {
 	} else {
 		return this._tiles[x][y] || Game.Tile.nullTile;
 	}
-}
+} // getTile
 
 Game.Map.prototype.dig = function(x, y) {
 	// If the tile is diggable, make it a floor
@@ -62,9 +79,12 @@ Game.Map.prototype.getRandomFloorPosition = function() {
 	do{
 		x = Math.floor(Math.random() * this._width);
 		y = Math.floor(Math.random() * this._height);
-	} while(this.getTile(x, y) != Game.Tile.floorTile ||
-            this.getEntityAt(x, y));
+	} while(!this.isEmptyFloor(x, y));
 	return {x: x, y: y};
+}  // getRandomFloorPosition
+
+Game.Map.prototype.isEmptyFloor = function(x, y){
+	return this.getTile(x, y) == Game.Tile.floorTile && !this.getEntityAt(x, y);
 }
 
 Game.Map.prototype.addEntity = function(entity){
@@ -82,11 +102,26 @@ Game.Map.prototype.addEntity = function(entity){
 	if (entity.hasMixin('Actor')){
 		this._scheduler.add(entity, true);
 	}
-}
+} // addEntity
 
 Game.Map.prototype.addEntityAtRandomPosition = function(entity){
 	let position = this.getRandomFloorPosition();
 	entity.setX(position.x);
 	entity.setY(position.y);
 	this.addEntity(entity);
-}
+} // addEntityAtRandomPosition
+
+Game.Map.prototype.removeEntity = function(entity) {
+	// Find the entity in the list of entities if it is present
+	for (let i = 0; i < this._entities.length; i++){
+		if (this._entities[i] == entity){
+			this._entities.splice(i,1);
+			break;
+		}
+	}
+	// If the entity is an actor, remove them from the schedule
+	if (entity.hasMixin('Actor')) {
+		this._scheduler.remove(entity);
+	}
+	
+} // removeEntity

@@ -40,8 +40,8 @@ Game.Screen.playScreen = {
 	enter: function() {
 		console.log( "Entered playScreen.")
 		var map = [];
-		let mapWidth  = 500;
-		let mapHeight = 500;
+		let mapWidth  = 100;
+		let mapHeight = 50;
 		// Create the map array, and fill it with null tiles
 		for (var x = 0; x < mapWidth; x++) {
 			// Create the nested array for the y values;
@@ -81,7 +81,7 @@ Game.Screen.playScreen = {
 			});
 		}	
 		// Create map from the tiles and our player object
-		this._player = new Game.Entity(Game.PlayerTemplate);
+		this._player = new Game.Entity(Game.Templates.Player);
 		this._map = new Game.Map(map, this._player);
 		// Start the map's engine
 		this._map.getEngine().start();
@@ -92,10 +92,10 @@ Game.Screen.playScreen = {
 	exit: function() { console.log("Exited play screen."); },
 	
     render: function(display) {
-		console.log("drawing the display");
+//console.log("drawing the display");
 		let screenWidth = Game.getScreenWidth();
 		let screenHeight = Game.getScreenHeight();
-		console.log("Width: " + screenWidth + ", Height: "+screenHeight);
+//console.log("Width: " + screenWidth + ", Height: "+screenHeight);
 		
 		// make sure our viewport doesn't try to scroll off the map to the left
 		// and don't scroll so far to the right that you don't have a full screen to display
@@ -104,7 +104,7 @@ Game.Screen.playScreen = {
 		
 		let topLeftY = Math.max(0, this._player.getY() - (screenHeight / 2));
 		topLeftY = Math.min(topLeftY, this._map.getHeight() - screenHeight);
-		console.log("topLeft x,y: "+topLeftX + ", "+topLeftY);
+//console.log("topLeft x,y: "+topLeftX + ", "+topLeftY);
 		
 		// Iterate through all visile map cells
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
@@ -131,13 +131,26 @@ Game.Screen.playScreen = {
                 entity.getY() < topLeftY + screenHeight) {
                 display.draw(
                     entity.getX() - topLeftX, 
-                    entity.getY() - topLeftY,    
+                    entity.getY() - topLeftY,
                     entity.getChar(), 
                     entity.getForeground(), 
                     entity.getBackground()
                 );
             }
-		}		
+		}
+		// Get and render messages in the player's queue
+		let messages = this._player.getMessages();
+		var messageY = 0;
+		for (let i = 0; i < messages.length; i++ ) {
+			messageY += display.drawText(0, messageY, '%c{white}%b{gray}' + messages[i]);
+		}
+		
+		// Show hp
+		let stats = '%c{white}%b{black}';
+		stats += vsprintf('HP: %d/%d ', [this._player.getHp(), this._player.getMaxHp()]);
+		display.drawText(0, screenHeight, stats);
+		
+		
     }, //render()
 	
     handleInput: function(inputType, inputData) {
@@ -155,7 +168,7 @@ Game.Screen.playScreen = {
 					case ROT.VK_NUMPAD2: this.move( 0,  1); break;
 					case ROT.VK_NUMPAD3: this.move( 1,  1); break;
 					case ROT.VK_NUMPAD4: this.move(-1,  0); break;
-					case ROT.VK_NUMPAD5: this.move( 0,  0); break;
+					case ROT.VK_NUMPAD5: /*this.move( 0,  0);*/ break;
 					case ROT.VK_NUMPAD6: this.move( 1,  0); break;
 					case ROT.VK_NUMPAD7: this.move(-1, -1); break;
 					case ROT.VK_NUMPAD8: this.move( 0, -1); break;
