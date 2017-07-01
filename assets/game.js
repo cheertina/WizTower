@@ -8,13 +8,16 @@ var Game =  {
         // Any necessary initialization will go here.
 		
 		var displayOptions = {
-			fontSize: 28,
+			//fontSize: 28,
 			width: this._screenWidth,
             height: this._screenHeight + 1 // extra row for stats display
 		};
         this._display = new ROT.Display(displayOptions);
 		
-        // Create a helper function for binding to an event
+        
+		
+		
+		// Create a helper function for binding to an event
         // and making it send it to the screen
         var game = this; // So that we don't lose this
         var bindEventToScreen = function(event) {
@@ -30,7 +33,10 @@ var Game =  {
         // Bind keyboard input events
         bindEventToScreen('keydown');
         //bindEventToScreen('keyup');
-        //bindEventToScreen('keypress');
+        bindEventToScreen('keypress');
+		
+		
+		
     }, 	//init
 	
 	// Basic getters

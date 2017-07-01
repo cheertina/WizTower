@@ -20,12 +20,12 @@ Game.Tile.prototype.isDiggable = function(){ return this._isDiggable; }
 Game.getNeighborPositions = function(x, y) {
 	let tiles = [];
 	// Generate all possible offsets
-	for (let dX = -1; dX < 2, dX++){
-		for (let dY = -1; dY < 2; dY++){
+	for (var dX = -1; dX < 2; dX++){
+		for (var dY = -1; dY < 2; dY++){
 			if(dX == 0 && dY == 0){
 				continue;
 			}
-			tile.push({x: x + dX, y: y + dY});
+			tiles.push({x: x + dX, y: y + dY});
 		}
 	}
 	return tiles.randomize();

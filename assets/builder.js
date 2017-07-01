@@ -20,12 +20,27 @@ Game.Builder = function(width, height, depth){
 			}
 		}
 	}
+	for (let z = 0; z < this._depth; z++){
+		this._setupRegions(z);
+	}
+	this._connectAllRegions();
+	
 };
+
+// Getters
+
+Game.Builder.prototype.getTiles  = function() { return this._tiles; }
+Game.Builder.prototype.getDepth  = function() { return this._depth; }
+Game.Builder.prototype.getWidth  = function() { return this._width; }
+Game.Builder.prototype.getHeight = function() { return this._height; }
+
+
+// Level-building helper functions
 
 Game.Builder.prototype._generateLevel = function() {
 	// Create the empty map
 	var map = new Array(this._width);
-	for (var w = 0; w < this._Width; w++){
+	for (let w = 0; w < this._width; w++){
 		map[w] = new Array(this._height);
 	}
 	
@@ -50,6 +65,11 @@ Game.Builder.prototype._generateLevel = function() {
 	
 } // _generateLevel()
 
+
+
+
+
+
 Game.Builder.prototype._canFillRegion = function(x, y, z){
 	// Make sure the tile is in bounds
 	if (x < 0 || x >= this._width ||
@@ -58,8 +78,9 @@ Game.Builder.prototype._canFillRegion = function(x, y, z){
 		return false;
 	}
 	// Make sure it doesn't already have a region
-	if (this._regions[z][x][y] != 0) return false;
-	
+	if (this._regions[z][x][y] != 0){
+		return false;
+	}
 	// Make sure the tile is walkable
 	return this._tiles[z][x][y].isWalkable();
 	
@@ -68,7 +89,7 @@ Game.Builder.prototype._canFillRegion = function(x, y, z){
 Game.Builder.prototype._fillRegion = function (region, x, y, z){
 	// Flood fill a region with a number, return the number of tiles filled
 	var tilesFilled = 1;
-	var tiles = [{x:x. y:y}];
+	var tiles = [{x:x, y:y}];
 	var tile;
 	var neighbors;
 	
@@ -101,7 +122,7 @@ Game.Builder.prototype._removeRegion = function(region, z){
 			if(this._regions[z][x][y] == region){
 				// Clear the region and set the tile to a wall
 				this._regions[z][x][y] = 0;
-				this._tiles[z][x][y] = Game.Tiles.wallTile;
+				this._tiles[z][x][y] = Game.Tile.wallTile;
 			}
 		}
 	}
@@ -117,7 +138,7 @@ Game.Builder.prototype._setupRegions = function(z){
 				// Try to fill
 				tilesFilled = this._fillRegion(region, x, y, z);
 				// If it was too small, just remove it
-				if(tilesFille <= 20){
+				if(tilesFilled <= 20){
 					this._removeRegion(region, z);
 				} else {
 					region++;
@@ -125,9 +146,70 @@ Game.Builder.prototype._setupRegions = function(z){
 			}
 		}
 	}
+	
 } // _setupRegions()
 
-// TODO: MAKE REGIONS CONNECT - see part 7
+// Fetch a list of points that overlap between one region 
+// at a given level and a region on the level beneath
+Game.Builder.prototype._findRegionOverlaps = function(z, r1, r2){
+	var matches = [];
+	// Iterate through all tiles, checking to make sure they are in
+	// the right regions and are floor tiles (so we don't try to put
+	// two stairs on the same space)
+	for (let x = 0; x < this._width; x++){
+		for (let y = 0; y < this._height; y++){
+			if (this._tiles[z][x][y] == Game.Tile.floorTile &&
+				this._tiles[z+1][x][y] == Game.Tile.floorTile &&
+				this._regions[z][x][y] == r1 &&
+				this._regions[z+1][x][y] == r2){
+				matches.push({x:x, y:y});
+			}
+		}
+	}
+	// Shuffle the list to prevent bias
+	//return matches.randomize();
+	return matches;
+	
+	
+} // findRegionOverlaps()
 
+Game.Builder.prototype._connectRegions = function(z, r1, r2) {
+	var overlap = this._findRegionOverlaps(z, r1, r2);
+	if (overlap.length == 0){
+		//bail out if no overlaps
+		return false;
+	}
+	// Select the first (randomized) tile from the overlap and make it stairs
+	let point = overlap[0];
+	this._tiles[z][point.x][point.y] = Game.Tile.stairsDownTile;
+	this._tiles[z+1][point.x][point.y] = Game.Tile.stairsUpTile;
+	return true;
+	
+} // connectRegions()
 
+// Connect all regions for each depth level,
+// starting from the top
+Game.Builder.prototype._connectAllRegions = function(){
+	for (let z = 0; z < this._depth - 1 ; z++){
+		// Iterate through each tile, and if we haven't tried
+		// to connect the region of that tile on both depth levels
+		// then we try.  We store connected properties as stings
+		// for quick lookups
+		let connected = {};
+		let key;
+		for (let x = 0; x < this._width; x++){
+			for (let y = 0; y < this._height; y++){
+				key = this._regions[z][x][y] + ',' + this._regions[z+1][x][y];
+				if (!connected[key] && this._tiles[z][x][y] == Game.Tile.floorTile
+									&& this._tiles[z+1][x][y] == Game.Tile.floorTile){
+					// Since both tiles are floors and we haven't
+					// already connected the two regions, try now
+
+					this._connectRegions(z, this._regions[z][x][y], this._regions[z+1][x][y]);
+					connected[key] = true;
+				}
+			}
+		}
+	}
+}// connectAllRegions()
 

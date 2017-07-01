@@ -39,50 +39,19 @@ Game.Screen.playScreen = {
 	
 	enter: function() {
 		console.log( "Entered playScreen.")
-		var map = [];
-		let mapWidth  = 160;
-		let mapHeight = 48;
-		// Create the map array, and fill it with null tiles
-		for (var x = 0; x < mapWidth; x++) {
-			// Create the nested array for the y values;
-			map.push([]);
-			for (var y = 0; y < mapHeight; y++){
-				map[x].push(Game.Tile.nullTile);
-			}
-		}
 		
-		let mapStyle = null;
-		//mapStyle = "nethack";
-		if(mapStyle == "nethack"){			
-			let generator = new ROT.Map.Uniform(mapWidth, mapHeight, {timeLimit: 5000});
-			generator.create(function(x,y,v) {
-				if(v === 0){
-					map[x][y] = Game.Tile.floorTile;
-				}else{
-					map[x][y] = Game.Tile.wallTile;
-				}
-			});
-			
-		} else {
-			//this will give us an array of 1's and 0's
-			let generator = new ROT.Map.Cellular(mapWidth, mapHeight);
-			generator.randomize(0.5);
-			let totalIterations = 3;	// Each iteration smooths the map
-			for (let i = 0; i < totalIterations - 1; i++) {
-				generator.create();
-			}
-			//One last pass and update the map as we do
-			generator.create(function(x,y,v){
-				if(v === 1) {
-					map[x][y] = Game.Tile.floorTile;
-				} else {
-					map[x][y] = Game.Tile.wallTile;
-				}
-			});
-		}	
+		var map = [];
+		let width  = 80;
+		let height = 24;
+		let depth = 6;
+		// Use our Builder to make the map
+		var tiles = new Game.Builder(width, height, depth).getTiles();
+		
 		// Create map from the tiles and our player object
 		this._player = new Game.Entity(Game.Templates.Player);
-		this._map = new Game.Map(map, this._player);
+		this._map = new Game.Map(tiles, this._player)
+		//this._map = new Game.Map(map, this._player);  <--- old version
+		
 		// Start the map's engine
 		this._map.getEngine().start();
 		
@@ -92,10 +61,9 @@ Game.Screen.playScreen = {
 	exit: function() { console.log("Exited play screen."); },
 	
     render: function(display) {
-//console.log("drawing the display");
 		let screenWidth = Game.getScreenWidth();
 		let screenHeight = Game.getScreenHeight();
-//console.log("Width: " + screenWidth + ", Height: "+screenHeight);
+
 		
 		// make sure our viewport doesn't try to scroll off the map to the left
 		// and don't scroll so far to the right that you don't have a full screen to display
@@ -104,14 +72,14 @@ Game.Screen.playScreen = {
 		
 		let topLeftY = Math.max(0, this._player.getY() - (screenHeight / 2));
 		topLeftY = Math.min(topLeftY, this._map.getHeight() - screenHeight);
-//console.log("topLeft x,y: "+topLeftX + ", "+topLeftY);
+
 		
-		// Iterate through all visile map cells
+		// Iterate through all visible map cells
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
 			for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
 				//Fetch the glyph for the tile and render it to the screen
 				// at the offest position
-				let tile = this._map.getTile(x, y);
+				let tile = this._map.getTile(x, y, this._player.getZ());
 				display.draw(
 					x - topLeftX,
 					y - topLeftY,
@@ -123,12 +91,14 @@ Game.Screen.playScreen = {
 		}
 		// Render the entities
 		var entities = this._map.getEntities();
-		for (var i = 0; i < entities.length; i++){
+		for (let i = 0; i < entities.length; i++){
 			let entity = entities[i];
 			//only render it if it actually fits in the viewport
-			if (entity.getX() >= topLeftX && entity.getY() >= topLeftY &&
+			if (entity.getX() >= topLeftX &&
+				entity.getY() >= topLeftY &&
                 entity.getX() < topLeftX + screenWidth &&
-                entity.getY() < topLeftY + screenHeight) {
+                entity.getY() < topLeftY + screenHeight &&
+				entity.getZ() == this._player.getZ()) {
                 display.draw(
                     entity.getX() - topLeftX, 
                     entity.getY() - topLeftY,
@@ -146,7 +116,7 @@ Game.Screen.playScreen = {
 		}
 		
 		// Show hp
-		let stats = '%c{white}%b{dimgray}';
+		let stats = '%c{white}%b{black}';
 		stats += vsprintf('HP: %d/%d   (%d, %d)',
 			[this._player.getHp(), this._player.getMaxHp(),
 			this._player.getX(), this._player.getY()]);
@@ -166,27 +136,40 @@ Game.Screen.playScreen = {
             } else {
 				// Movement
 				switch(inputData.keyCode){
-					case ROT.VK_NUMPAD1: this.move(-1,  1); break;
-					case ROT.VK_NUMPAD2: this.move( 0,  1); break;
-					case ROT.VK_NUMPAD3: this.move( 1,  1); break;
-					case ROT.VK_NUMPAD4: this.move(-1,  0); break;
-					case ROT.VK_NUMPAD5: /*this.move( 0,  0);*/ break;
-					case ROT.VK_NUMPAD6: this.move( 1,  0); break;
-					case ROT.VK_NUMPAD7: this.move(-1, -1); break;
-					case ROT.VK_NUMPAD8: this.move( 0, -1); break;
-					case ROT.VK_NUMPAD9: this.move( 1, -1); break;				
+					case ROT.VK_NUMPAD1: this.move(-1,  1, 0); break;
+					case ROT.VK_NUMPAD2: this.move( 0,  1, 0); break;
+					case ROT.VK_NUMPAD3: this.move( 1,  1, 0); break;
+					case ROT.VK_NUMPAD4: this.move(-1,  0, 0); break;
+					case ROT.VK_NUMPAD5: /*this.move( 0,  0, 0);*/ break; 	// nop; moving on top of self causes attacking self
+					case ROT.VK_NUMPAD6: this.move( 1,  0, 0); break;
+					case ROT.VK_NUMPAD7: this.move(-1, -1, 0); break;
+					case ROT.VK_NUMPAD8: this.move( 0, -1, 0); break;
+					case ROT.VK_NUMPAD9: this.move( 1, -1, 0); break;				
+					default: return;
 				}
-				this._map.getEngine().unlock();
+					this._map.getEngine().unlock();
 			}
-        }    
+        } else if (inputType == 'keypress') {
+			let keyChar = String.fromCharCode(inputData.charCode);
+			if (keyChar === '>') {
+				this.move(0, 0, 1);
+			} else if (keyChar === '<'){
+				this.move(0, 0, -1);
+			} else {
+				return;
+			}
+			// Unlock the engine
+			this._map.getEngine().unlock();
+		}
     }, // handleInput()
 	
 	// Move the "center" of viewport around the map
-	move: function(dX, dY) {
+	move: function(dX, dY, dZ) {
 		
 		let newX = this._player.getX() + dX;
 		let newY = this._player.getY() + dY;
-		this._player.tryMove(newX, newY, this._map);
+		let newZ = this._player.getZ() + dZ;
+		this._player.tryMove(newX, newY, newZ, this._map);
 		
 	}	// move()
 }
@@ -197,7 +180,7 @@ Game.Screen.winScreen = {
     exit: function() { console.log("Exited win screen."); },
     render: function(display) {
         // Render our prompt to the screen
-        for (var i = 0; i < 22; i++) {
+        for (let i = 0; i < 22; i++) {
             // Generate random background colors
             var r = Math.round(Math.random() * 255);
             var g = Math.round(Math.random() * 255);
@@ -217,7 +200,7 @@ Game.Screen.loseScreen = {
     exit: function() { console.log("Exited lose screen."); },
     render: function(display) {
         // Render our prompt to the screen
-        for (var i = 0; i < 22; i++) {
+        for (let i = 0; i < 22; i++) {
             display.drawText(2, i + 1, "%b{red}You lose! :(");
         }
     },
