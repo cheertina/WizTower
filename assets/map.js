@@ -13,9 +13,12 @@ Game.Map = function(tiles, player){
 	this._scheduler = new ROT.Scheduler.Simple();
 	this._engine = new ROT.Engine(this._scheduler);
 	
+	// Field of visions, one per floor
+	this._fov = [];
+	this.setupFov();
+	
+	
 	// add the player and some random fungi on each floor
-	
-	
 	this.addEntityAtRandomPosition(player, 0);
 	for (let z = 0; z < this._depth; z++){
 		for (let i = 0; i < 25; i++){
@@ -140,3 +143,18 @@ Game.Map.prototype.removeEntity = function(entity) {
 	}
 	
 } // removeEntity
+
+Game.Map.prototype.setupFov = function(){
+	//keep 'this' in the map variable, so we don't lose it
+	var map = this;
+	
+	// Iterate through each depth level, seting up the FoV
+	for (let z = 0; z < this._depth; z++){
+		let depth = z;
+		map._fov.push(new ROT.FOV.DiscreteShadowcasting(function(x,y) {
+			return !map.getTile(x, y, depth).isBlockingLight();}, {topology:8}));
+	}
+}
+
+Game.Map.prototype.getFov = function(depth){ return this._fov[depth]; }
+

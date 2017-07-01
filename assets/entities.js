@@ -1,7 +1,8 @@
 // Create our Mixins namespace
 Game.Mixins = {};
 
-Game.Mixins.Attacker = {
+// Mixins
+Game.Mixins.Attacker = { // Entity can attack and cause damage
 	name: 'Attacker',
 	groupName: 'Attacker',
 	init: function(template){
@@ -23,7 +24,7 @@ Game.Mixins.Attacker = {
 	}
 } // Attacker
 
-Game.Mixins.Destructible = {
+Game.Mixins.Destructible = { // Entity can take damage and be destroyed
 	name: 'Destructible',
 	init: function(template) {
 		this._maxHp = template['maxHp'] || 10;
@@ -44,7 +45,7 @@ Game.Mixins.Destructible = {
 	}
 } //Destructible
 
-Game.Mixins.MessageRecipient = {
+Game.Mixins.MessageRecipient = { // Entity is able to receive messages - see helpers
 	name: 'MessageRecipient',
 	init: function(template){ this._messages = []; },
 	receiveMessage: function(message) { this._messages.push(message); },
@@ -52,34 +53,7 @@ Game.Mixins.MessageRecipient = {
 	clearMessages: function() { this._messages = []; }
 }
 
-Game.sendMessage = function(recipient, message, args) {
-	// Make sure the recipient can receive the message
-	if (recipient.hasMixin(Game.Mixins.MessageRecipient)) {
-		// Format the message, but only if args are passed
-		if(args) {
-			message = vsprintf(message, args);
-		}
-		recipient.receiveMessage(message);
-		console.log("To "+ recipient.getName() + ": " + message);
-	}
-}	// sendMessage
-
-Game.sendMessageNearby = function(map, centerX, centerY, centerZ, message, args) {
-	// Format message, but only if args were passed
-	if (args){
-		message = vsprintf(message, args);
-	}
-	// Get the nearby entities
-	entities = map.getEntitiesWithinRadius(centerX, centerY, centerZ, 5);
-	// Iterate through nearby entities and send the message if they can receive it
-	for (let i = 0; i < entities.length; i++){
-		if (entities[i].hasMixin(Game.Mixins.MessageRecipient)) {
-			entities[i].receiveMessage(message);
-		}
-	}
-} // sendMessageNearby
-
-Game.Mixins.Movable = {
+Game.Mixins.Movable = { // Signifies that the entity can move
 	name: 'Movable',
 	tryMove: function(x, y, z, map) {
 		var tile = map.getTile(x, y, this.getZ());
@@ -127,8 +101,21 @@ Game.Mixins.Movable = {
 	}
 }	// Movable
 
-// Main player's actor mixin
+Game.Mixins.Sight = { // Signifies that our entity posseses a field of vision in a radius
+	name: 'Sight',
+	groupName: 'Sight',
+	init: function(template){
+		this._sightRadius = template['sightRadius'] || 5;
+	},
+	getSightRadius: function() {
+		return this._sightRadius;
+	}
+}
+
+
+// AI Mixins - 'Actor' group
 Game.Mixins.PlayerActor = {
+// Main player's actor mixin
 	name: 'PlayerActor',
 	groupName: 'Actor',
 	act: function(){
@@ -142,7 +129,7 @@ Game.Mixins.PlayerActor = {
 	}
 }
 
-Game.Mixins.FungusActor = {
+Game.Mixins.FungusActor = {	// Fungus cannot move, but can spread
 	name: 'FungusActor',
 	groupName: 'Actor',
 	init: function(){ 
@@ -180,6 +167,36 @@ Game.Mixins.FungusActor = {
 	} //act()
 }
 
+
+// Helper functions
+Game.sendMessage = function(recipient, message, args) { // Send a message to an entity
+	// Make sure the recipient can receive the message
+	if (recipient.hasMixin(Game.Mixins.MessageRecipient)) {
+		// Format the message, but only if args are passed
+		if(args) {
+			message = vsprintf(message, args);
+		}
+		recipient.receiveMessage(message);
+		console.log("To "+ recipient.getName() + ": " + message);
+	}
+}	// sendMessage
+
+Game.sendMessageNearby = function(map, centerX, centerY, centerZ, message, args) { // Send a message to all entities near a target space
+	// Format message, but only if args were passed
+	if (args){
+		message = vsprintf(message, args);
+	}
+	// Get the nearby entities
+	entities = map.getEntitiesWithinRadius(centerX, centerY, centerZ, 5);
+	// Iterate through nearby entities and send the message if they can receive it
+	for (let i = 0; i < entities.length; i++){
+		if (entities[i].hasMixin(Game.Mixins.MessageRecipient)) {
+			entities[i].receiveMessage(message);
+		}
+	}
+} // sendMessageNearby
+
+
 // Entity Templates
 Game.Templates = {}
 
@@ -190,8 +207,10 @@ Game.Templates.Player = {
 	background: 'black',
 	maxHP: 40,
 	attackValue: 10,
+	sightRadius: 6,
 	mixins: [
 		Game.Mixins.Movable,
+		Game.Mixins.Sight,
 		Game.Mixins.PlayerActor,
 		Game.Mixins.MessageRecipient,
 		Game.Mixins.Attacker,

@@ -8,7 +8,7 @@ var Game =  {
         // Any necessary initialization will go here.
 		
 		var displayOptions = {
-			//fontSize: 28,
+			fontSize: 28,
 			width: this._screenWidth,
             height: this._screenHeight + 1 // extra row for stats display
 		};

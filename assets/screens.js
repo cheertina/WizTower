@@ -34,11 +34,12 @@ Game.Screen.playScreen = {
     _player: null,
 	
 	
-	// For now we create the map on entering the level - eventually we'll make them persist
-	// when you leave, so you can come back to the same level
 	
 	enter: function() {
-		console.log( "Entered playScreen.")
+		console.log( "Entered playScreen." );
+		
+		// TODO for multi-screen
+		// Bail out here if already generated
 		
 		var map = [];
 		let width  = 80;
@@ -73,20 +74,39 @@ Game.Screen.playScreen = {
 		let topLeftY = Math.max(0, this._player.getY() - (screenHeight / 2));
 		topLeftY = Math.min(topLeftY, this._map.getHeight() - screenHeight);
 
+		// TODO:  Rip this out and use a better data structure
+		// IF you're feeling really ballsy, figure out something 
+		// with typed arrays and bit manipulation, since you only
+		// need boolean values in an array-like structure
+		
+		// This will keep track of our visible cells
+		var visibleCells = {};
+		// Find all visible cells and update teh object
+		this._map.getFov(this._player.getZ()).compute(
+			this._player.getX(),
+			this._player.getY(),
+			this._player.getSightRadius(),
+			function(x,y,radius, visibility){
+				visibleCells[x + "," + y] = true;
+			}
+		);
+		
 		
 		// Iterate through all visible map cells
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
 			for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
-				//Fetch the glyph for the tile and render it to the screen
-				// at the offest position
-				let tile = this._map.getTile(x, y, this._player.getZ());
-				display.draw(
-					x - topLeftX,
-					y - topLeftY,
-					tile.getChar(),
-					tile.getForeground(),
-					tile.getBackground()
-				);
+				if(visibleCells[x + "," + y]){
+					//Fetch the glyph for the tile and render it to the screen
+					// at the offest position
+					let tile = this._map.getTile(x, y, this._player.getZ());
+					display.draw(
+						x - topLeftX,
+						y - topLeftY,
+						tile.getChar(),
+						tile.getForeground(),
+						tile.getBackground()
+					);
+				}
 			}
 		}
 		// Render the entities
@@ -94,11 +114,12 @@ Game.Screen.playScreen = {
 		for (let i = 0; i < entities.length; i++){
 			let entity = entities[i];
 			//only render it if it actually fits in the viewport
-			if (entity.getX() >= topLeftX &&
-				entity.getY() >= topLeftY &&
-                entity.getX() < topLeftX + screenWidth &&
-                entity.getY() < topLeftY + screenHeight &&
-				entity.getZ() == this._player.getZ()) {
+			if (visibleCells[entity.getX() + ',' + entity.getY()] && //make sure it's visible first
+				entity.getX() >= topLeftX &&	// then check the rest of the conditions
+				entity.getY() >= topLeftY &&	// since it's more likely to be unseen than offscreen
+                entity.getX() < topLeftX + screenWidth &&	// because our vision radius is smaller
+                entity.getY() < topLeftY + screenHeight &&	// than the size of the screen
+				entity.getZ() == this._player.getZ()) {		// Duh.
                 display.draw(
                     entity.getX() - topLeftX, 
                     entity.getY() - topLeftY,
