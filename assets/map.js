@@ -17,6 +17,9 @@ Game.Map = function(tiles, player){
 	this._fov = [];
 	this.setupFov();
 	
+	// For keeping track of which tiles we've seen
+	this._explored = new Array(this._depth);
+	this._setupExploredArray();
 	
 	// add the player and some random fungi on each floor
 	this.addEntityAtRandomPosition(player, 0);
@@ -27,15 +30,50 @@ Game.Map = function(tiles, player){
 	}
 	
 	
-	
-} // Constructor
+}; // Constructor
 
 // Standard getters
-Game.Map.prototype.getDepth = function() { return this._depth; }
-Game.Map.prototype.getWidth = function() { return this._width; }
-Game.Map.prototype.getHeight = function() { return this._height; }
-Game.Map.prototype.getEngine = function() { return this._engine; }
-Game.Map.prototype.getEntities = function() { return this._entities; }
+Game.Map.prototype.getDepth = function() { return this._depth; };
+Game.Map.prototype.getWidth = function() { return this._width; };
+Game.Map.prototype.getHeight = function() { return this._height; };
+Game.Map.prototype.getEngine = function() { return this._engine; };
+Game.Map.prototype.getEntities = function() { return this._entities; };
+
+
+// Tile/Location
+Game.Map.prototype.getTile = function (x, y, z) {
+	//Make sure we're in bounds, return the null tile otherwise
+	if (x < 0 || x >= this._width 
+	 || y < 0 || y >= this._height
+	 || z < 0 || z >= this._depth){
+		return Game.Tile.nullTile;
+	} else {
+		return this._tiles[z][x][y] || Game.Tile.nullTile;
+	}
+}; // getTile
+
+Game.Map.prototype.dig = function(x, y, z) {
+	// If the tile is diggable, make it a floor
+	if (this.getTile(x, y, z).isDiggable()) {
+		this._tiles[z][x][y] = Game.Tile.floorTile;
+	}
+};
+
+Game.Map.prototype.getRandomFloorPosition = function(z) {
+	// Randomly select an empty floor tile on the chosen floor
+	let x, y;
+	do{
+		x = Math.floor(Math.random() * this._width);
+		y = Math.floor(Math.random() * this._height);
+	} while(!this.isEmptyFloor(x, y, z));
+	return {x: x, y: y, z: z};
+};  // getRandomFloorPosition
+
+Game.Map.prototype.isEmptyFloor = function(x, y, z){
+	return this.getTile(x, y, z) == Game.Tile.floorTile && !this.getEntityAt(x, y, z);
+};
+
+// Entity-related
 
 Game.Map.prototype.getEntityAt = function(x, y, z){
 	// Look through the entity list and see
@@ -48,7 +86,7 @@ Game.Map.prototype.getEntityAt = function(x, y, z){
 		}
 	}
 	return false;
-} // getEntityAt
+}; // getEntityAt
 
 Game.Map.prototype.getEntitiesWithinRadius = function(centerX, centerY, centerZ, radius){
 	results = [];
@@ -68,40 +106,7 @@ Game.Map.prototype.getEntitiesWithinRadius = function(centerX, centerY, centerZ,
 		}
 	}
 	return results;
-} // getEntitiesWithinRadius
-
-//get the tile for a given coordinate set
-Game.Map.prototype.getTile = function (x, y, z) {
-	//Make sure we're in bounds, return the null tile otherwise
-	if (x < 0 || x >= this._width 
-	 || y < 0 || y >= this._height
-	 || z < 0 || z >= this._depth){
-		return Game.Tile.nullTile;
-	} else {
-		return this._tiles[z][x][y] || Game.Tile.nullTile;
-	}
-} // getTile
-
-Game.Map.prototype.dig = function(x, y, z) {
-	// If the tile is diggable, make it a floor
-	if (this.getTile(x, y, z).isDiggable()) {
-		this._tiles[z][x][y] = Game.Tile.floorTile;
-	}
-}
-
-Game.Map.prototype.getRandomFloorPosition = function(z) {
-	// Randomly select an empty floor tile on the chosen floor
-	let x, y;
-	do{
-		x = Math.floor(Math.random() * this._width);
-		y = Math.floor(Math.random() * this._height);
-	} while(!this.isEmptyFloor(x, y, z));
-	return {x: x, y: y, z: z};
-}  // getRandomFloorPosition
-
-Game.Map.prototype.isEmptyFloor = function(x, y, z){
-	return this.getTile(x, y, z) == Game.Tile.floorTile && !this.getEntityAt(x, y, z);
-}
+}; // getEntitiesWithinRadius
 
 Game.Map.prototype.addEntity = function(entity){
 	// Make sure it's in bounds
@@ -119,7 +124,7 @@ Game.Map.prototype.addEntity = function(entity){
 	if (entity.hasMixin('Actor')){
 		this._scheduler.add(entity, true);
 	}
-} // addEntity
+}; // addEntity
 
 Game.Map.prototype.addEntityAtRandomPosition = function(entity, z){
 	let position = this.getRandomFloorPosition(z);
@@ -127,7 +132,7 @@ Game.Map.prototype.addEntityAtRandomPosition = function(entity, z){
 	entity.setY(position.y);
 	entity.setZ(position.z)
 	this.addEntity(entity);
-} // addEntityAtRandomPosition
+}; // addEntityAtRandomPosition
 
 Game.Map.prototype.removeEntity = function(entity) {
 	// Find the entity in the list of entities if it is present
@@ -142,7 +147,9 @@ Game.Map.prototype.removeEntity = function(entity) {
 		this._scheduler.remove(entity);
 	}
 	
-} // removeEntity
+}; // removeEntity
+
+// Vision/exploration
 
 Game.Map.prototype.setupFov = function(){
 	//keep 'this' in the map variable, so we don't lose it
@@ -154,7 +161,40 @@ Game.Map.prototype.setupFov = function(){
 		map._fov.push(new ROT.FOV.DiscreteShadowcasting(function(x,y) {
 			return !map.getTile(x, y, depth).isBlockingLight();}, {topology:8}));
 	}
-}
+};
 
-Game.Map.prototype.getFov = function(depth){ return this._fov[depth]; }
+Game.Map.prototype.getFov = function(depth){ return this._fov[depth]; };
+
+Game.Map.prototype._setupExploredArray = function() {
+	
+	for (let z = 0; z < this._depth; z++){
+		
+		this._explored[z] = new Array(this._width);
+		for (let x = 0; x < this._width; x++){
+			
+			this._explored[z][x] = new Array(this.height);
+			for (let y = 0; y < this._height; y++){
+				// Start all cells as unseen
+				this._explored[z][x][y] = false;
+			}
+		}
+	}
+}; //_setupExploredArray()
+
+Game.Map.prototype.setExplored = function(x, y, z, state) {
+    // Only update if the tile is within bounds
+    if (this.getTile(x, y, z) !== Game.Tile.nullTile) {
+        this._explored[z][x][y] = state;
+    }
+};
+
+Game.Map.prototype.isExplored = function(x, y, z) {
+    // Only return the value if within bounds
+    if (this.getTile(x, y, z) !== Game.Tile.nullTile) {
+        return this._explored[z][x][y];
+    } else {
+        return false;
+    }
+};
+
 

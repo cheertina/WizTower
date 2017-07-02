@@ -43,7 +43,7 @@ Game.Mixins.Destructible = { // Entity can take damage and be destroyed
             this.getMap().removeEntity(this);
 		}
 	}
-} //Destructible
+}; //Destructible
 
 Game.Mixins.MessageRecipient = { // Entity is able to receive messages - see helpers
 	name: 'MessageRecipient',
@@ -51,7 +51,7 @@ Game.Mixins.MessageRecipient = { // Entity is able to receive messages - see hel
 	receiveMessage: function(message) { this._messages.push(message); },
 	getMessages: function(){ return this._messages; },
 	clearMessages: function() { this._messages = []; }
-}
+};
 
 Game.Mixins.Movable = { // Signifies that the entity can move
 	name: 'Movable',
@@ -99,7 +99,7 @@ Game.Mixins.Movable = { // Signifies that the entity can move
 		}
 		return false;
 	}
-}	// Movable
+};	// Movable
 
 Game.Mixins.Sight = { // Signifies that our entity posseses a field of vision in a radius
 	name: 'Sight',
@@ -110,7 +110,7 @@ Game.Mixins.Sight = { // Signifies that our entity posseses a field of vision in
 	getSightRadius: function() {
 		return this._sightRadius;
 	}
-}
+};
 
 
 // AI Mixins - 'Actor' group
@@ -127,7 +127,7 @@ Game.Mixins.PlayerActor = {
 		// Clear the message queue
 		this.clearMessages();
 	}
-}
+};
 
 Game.Mixins.FungusActor = {	// Fungus cannot move, but can spread
 	name: 'FungusActor',
@@ -165,7 +165,7 @@ Game.Mixins.FungusActor = {	// Fungus cannot move, but can spread
 			}
 		}
 	} //act()
-}
+};
 
 
 // Helper functions
@@ -179,7 +179,7 @@ Game.sendMessage = function(recipient, message, args) { // Send a message to an 
 		recipient.receiveMessage(message);
 		console.log("To "+ recipient.getName() + ": " + message);
 	}
-}	// sendMessage
+};	// sendMessage
 
 Game.sendMessageNearby = function(map, centerX, centerY, centerZ, message, args) { // Send a message to all entities near a target space
 	// Format message, but only if args were passed
@@ -194,7 +194,7 @@ Game.sendMessageNearby = function(map, centerX, centerY, centerZ, message, args)
 			entities[i].receiveMessage(message);
 		}
 	}
-} // sendMessageNearby
+}; // sendMessageNearby
 
 
 // Entity Templates
@@ -215,7 +215,7 @@ Game.Templates.Player = {
 		Game.Mixins.MessageRecipient,
 		Game.Mixins.Attacker,
 		Game.Mixins.Destructible]
-}
+};
 
 Game.Templates.Fungus = {
 	name: 'fungus',
@@ -223,4 +223,4 @@ Game.Templates.Fungus = {
 	foreground: 'lime',
 	maxHp: 10,
 	mixins: [Game.Mixins.FungusActor, Game.Mixins.Destructible]
-}
+};

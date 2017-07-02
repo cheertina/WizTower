@@ -74,36 +74,43 @@ Game.Screen.playScreen = {
 		let topLeftY = Math.max(0, this._player.getY() - (screenHeight / 2));
 		topLeftY = Math.min(topLeftY, this._map.getHeight() - screenHeight);
 
-		// TODO:  Rip this out and use a better data structure
-		// IF you're feeling really ballsy, figure out something 
-		// with typed arrays and bit manipulation, since you only
-		// need boolean values in an array-like structure
 		
 		// This will keep track of our visible cells
 		var visibleCells = {};
+		// Don't lose these values during callbacks
+		var currentDepth = this._player.getZ();
+		var map = this._map;
 		// Find all visible cells and update teh object
-		this._map.getFov(this._player.getZ()).compute(
+		map.getFov(currentDepth).compute(
 			this._player.getX(),
 			this._player.getY(),
 			this._player.getSightRadius(),
 			function(x,y,radius, visibility){
 				visibleCells[x + "," + y] = true;
+				// Mark visible cells as explored
+				map.setExplored(x, y, currentDepth, true);
 			}
 		);
 		
 		
-		// Iterate through all visible map cells
+		// Iterate through all map cells that fit on the current screen
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
 			for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
-				if(visibleCells[x + "," + y]){
+				// Render all tiles that have ever been seen
+				if(map.isExplored(x, y, currentDepth)){
 					//Fetch the glyph for the tile and render it to the screen
 					// at the offest position
-					let tile = this._map.getTile(x, y, this._player.getZ());
+					let tile = this._map.getTile(x, y, currentDepth);
+					
+					//If it has been seen but isn't currently visible,
+					// render it in darkgray
+					let foreground = visibleCells[x + "," + y] ?
+						tile.getForeground() : 'darkGray';
 					display.draw(
 						x - topLeftX,
 						y - topLeftY,
 						tile.getChar(),
-						tile.getForeground(),
+						foreground,
 						tile.getBackground()
 					);
 				}
