@@ -32,7 +32,9 @@ Game.Screen.startScreen = {
 Game.Screen.playScreen = {
 	_map: null,
     _player: null,
-	_gameEnded : false,
+	_gameEnded: false,
+	_subScreen: null,
+	_turns: 0,
 	
 	enter: function() {
 		console.log( "Entered playScreen." );
@@ -60,6 +62,11 @@ Game.Screen.playScreen = {
 	exit: function() { console.log("Exited play screen."); },
 	
     render: function(display) {
+		// Render the subscreen, if it exists
+		if (this._subScreen) {
+			this._subScreen.render(display);
+			return;
+		}
 		let screenWidth = Game.getScreenWidth();
 		let screenHeight = Game.getScreenHeight();
 
@@ -162,41 +169,97 @@ Game.Screen.playScreen = {
 			messageY += display.drawText(0, messageY, '%c{white}%b{black}' + messages[i]);
 		}
 		
-		// Show hp
-		let stats = '%c{white}%b{black}';
-		stats += vsprintf('HP: %d/%d   (%d, %d)',
+		// Show hp, location, other stats TBD
+		let status = '%c{white}%b{black}';
+		status += vsprintf('HP: %d/%d   (%d, %d)   Turns: %d',
 			[this._player.getHp(), this._player.getMaxHp(),
-			this._player.getX(), this._player.getY()]);
-		display.drawText(0, screenHeight, stats);
+			this._player.getX(), this._player.getY(), this._turns]);
+		display.drawText(0, screenHeight, status);
 		
 		
     }, //render()
 	
     handleInput: function(inputType, inputData) {
-        if (inputType === 'keydown') {
-            // If enter is pressed, go to the win screen
-            // If escape is pressed, go to lose screen
-            if (this._gameEnded){
-				if (inputData.keyCode === ROT.VK_RETURN) {
-					Game.switchScreen(Game.Screen.loseScreen);
-				}
-				return;
-            } else {
-				// Movement
-				switch(inputData.keyCode){
-					case ROT.VK_NUMPAD1: this.move(-1,  1, 0); break;
-					case ROT.VK_NUMPAD2: this.move( 0,  1, 0); break;
-					case ROT.VK_NUMPAD3: this.move( 1,  1, 0); break;
-					case ROT.VK_NUMPAD4: this.move(-1,  0, 0); break;
-					case ROT.VK_NUMPAD5: /*this.move( 0,  0, 0);*/ break; 	// nop; moving on top of self causes attacking self
-					case ROT.VK_NUMPAD6: this.move( 1,  0, 0); break;
-					case ROT.VK_NUMPAD7: this.move(-1, -1, 0); break;
-					case ROT.VK_NUMPAD8: this.move( 0, -1, 0); break;
-					case ROT.VK_NUMPAD9: this.move( 1, -1, 0); break;				
-					default: return;
-				}
-					this._map.getEngine().unlock();
+		// If the game is over, press any key to go to Game Over screen
+		if (inputType === 'keydown' && this._gameEnded){
+			if (inputData.keyCode === ROT.VK_RETURN) {
+				Game.switchScreen(Game.Screen.loseScreen);
 			}
+			return; // Don't respond to any other input
+        }
+		// If there's a subscreen, do that instead
+		if(this._subScreen){
+			this._subScreen.handleInput(inputType, inputData);
+			return;
+		}
+		if (inputType === 'keydown') {
+            // Movement
+			switch(inputData.keyCode){
+				case ROT.VK_NUMPAD1: this.move(-1,  1, 0); break;
+				case ROT.VK_NUMPAD2: this.move( 0,  1, 0); break;
+				case ROT.VK_NUMPAD3: this.move( 1,  1, 0); break;
+				case ROT.VK_NUMPAD4: this.move(-1,  0, 0); break;
+				case ROT.VK_NUMPAD5: /*this.move( 0,  0, 0);*/ break; 	// nop; moving on top of self causes attacking self
+				case ROT.VK_NUMPAD6: this.move( 1,  0, 0); break;
+				case ROT.VK_NUMPAD7: this.move(-1, -1, 0); break;
+				case ROT.VK_NUMPAD8: this.move( 0, -1, 0); break;
+				case ROT.VK_NUMPAD9: this.move( 1, -1, 0); break;				
+				//  TODO: Make sure these are "costing" turns as appropriate - we've deviated from the tutorial
+				// I _think_ that any branch that hits a "return" should be free,
+				// and anything that doesn't needs to hit a "break" to avoid fall-through
+				// turns are spent if the executeOkFunction on the subscreen returns true
+				case ROT.VK_I:	// INVENTORY
+					if(this._player.getItems().filter(function(x){return x;}).length === 0) {
+						// If the player's inventory is empty, send a message
+						Game.sendMessage(this._player, "You're not carrying anything!");
+						Game.refresh();
+					} else {
+						// Show the inventory
+						Game.Screen.inventoryScreen.setup(this._player, this._player.getItems());
+						this.setSubScreen(Game.Screen.inventoryScreen);
+						break;
+					}
+					return; // Looking at the inventory is "free"
+				case ROT.VK_D:	// DROP ITEM
+					if(this._player.getItems().filter(function(x){return x;}).length === 0) {
+						// If the player's inventory is empty, send a message and don't spend a turn
+						Game.sendMessage(this._player, "You're not carrying anything!");
+						Game.refresh();
+						return;
+					} else {
+						// Show the drop screen
+						Game.Screen.dropScreen.setup(this._player, this._player.getItems());
+						this.setSubScreen(Game.Screen.dropScreen);
+						break;
+					}
+					return;
+				case ROT.VK_COMMA:	// PICK UP ITEMS
+					let items = this._map.getItemsAt(this._player.getX(), this._player.getY(), this._player.getZ())
+					// If there are no items, show a message
+					if (!items){
+						Game.sendMessage(this._player, "There is nothing here to pick up.");
+						return;
+					} else if (items.length === 1) {
+						let item = items[0];
+						if(this._player.pickupItems([0])) {
+							Game.sendMessage(this._player, "You pick up %s.", [item.describeA()]);
+							break;
+						} else {
+							Game.sendMessage(this._player, "Your inventory is full! Nothing was picked up.");
+							return;
+						}
+					} else { // Show the pickup screen since there are multiple items
+						Game.Screen.pickupScreen.setup(this._player, items);
+						this.setSubScreen(Game.Screen.pickupScreen);
+						break;
+					}
+				default: return;
+			}
+				// This is where we actually end our turn
+				// if we return before here, we get to 'go again'
+				// e.g. checking the inventory, picking up no items, dropping no items
+				this._map.getEngine().unlock();
+			
         } else if (inputType == 'keypress') {
 			let keyChar = String.fromCharCode(inputData.charCode);
 			if (keyChar === '>') {
@@ -224,6 +287,11 @@ Game.Screen.playScreen = {
 	
 	setGameEnded: function(gameEnded){
 		this._gameEnded = gameEnded;
+	},
+	setSubScreen: function(subScreen) {
+		this._subScreen = subScreen;
+		// Refresh the screen to render the subscreen
+		Game.refresh();
 	}
 }
 
@@ -261,3 +329,124 @@ Game.Screen.loseScreen = {
         // Nothing to do here      
     }
 }
+
+// An Item list based on template for different use cases
+// inventory list, pick up, drop, etc.
+Game.Screen.ItemListScreen = function(template){
+	this._caption = template['caption'];
+	this._okFunction = template['ok'];
+	// Whether items are selectable
+	this._canSelectItem = template['canSelect'];
+	// Whether the user can select multiple items
+	this._canSelectMultipleItems = template['canSelectMultipleItems'];
+};
+
+Game.Screen.ItemListScreen.prototype.setup = function(player, items){
+	this._player = player;
+	// Should be called before switching to the screen
+	this._items = items;
+	// Clean the set of selected indices
+	this._selectedIndices = {};
+};
+
+Game.Screen.ItemListScreen.prototype.render = function(display) {
+	let letters = 'abcdefghijklmnopqrstuvwxyz';
+	//Render the caption in the top row
+	display.drawText(0,0, this._caption);
+	let row = 2;	// Leave a blank line after the caption, and start rendering at row 2
+	for (let slot = 0; slot < this._items.length; slot++) {
+		// If we have an item, we want to list it
+		if (this._items[slot]) {
+			// Get the letter matching the item's index
+			let letter = letters.substring(slot, slot+1);
+			// If an item is selected, show a '+',
+			// otherwise a '-' between the letter and name
+			let selectionState = (this._canSelectItem && this._canSelectMultipleItems && 
+				this._selectedIndices[slot]) ? '+' : '-';
+			// Render at the correct row
+			dispStr = letter + ' ' + selectionState + ' [ ] ' + this._items[slot].describe();
+			display.drawText(0, row, dispStr);
+			display.draw(5, row, this._items[slot].getChar(), this._items[slot].getForeground(), this._items[slot].getBackground());
+			
+			
+			row++;
+		}
+	}
+};
+
+Game.Screen.ItemListScreen.prototype.executeOkFunction = function() {
+	// Gather the selected items
+	let selectedItems = {};
+	for (var key in this._selectedIndices){
+		selectedItems[key] = this._items[key];
+	}
+	// Switch back to the play screen
+	Game.Screen.playScreen.setSubScreen(null);
+	// Call the OK function and end the players turn if it returns true
+	if (this._okFunction(selectedItems)) {
+		this._player.getMap().getEngine().unlock();
+	}
+};
+
+Game.Screen.ItemListScreen.prototype.handleInput = function(inputType, inputData) {
+	if (inputType === 'keydown'){
+		// If the user hit escape, hit enter and can't select an item, or hit enter
+		// without any items selected, bail out
+		if (inputData.keyCode === ROT.VK_ESCAPE || 
+			(inputData.keycode === ROT.VK_RETURN && 
+				(!this._canSelectItem | Object.keys(this._selectedIndices).length === 0))) {
+			Game.Screen.playScreen.setSubScreen(null);
+		// Handle pressing return when items are selected
+		} else if (inputData.keyCode === ROT.VK_RETURN) {
+			this.executeOkFunction();
+		// Handle pressing a letter if we can select
+		} else if (this._canSelectItem && inputData.keyCode >= ROT.VK_A && inputData.keyCode <=ROT.VK_Z) {
+			// Map letter to slot # by subtracting the value of 'a'
+			let index = inputData.keyCode - ROT.VK_A;
+			if (this._items[index]){
+				// If multi-select is allowed, toggle the selection status
+				if (this._canSelectMultipleItems) {
+					if(this._selectedIndices[index]) {
+						delete this._selectedIndices[index];
+					} else {
+						this._selectedIndices[index] = true;
+					}
+					// Redraw the screen
+					Game.refresh();
+				} else {// If not, exit with selected item
+					this._selectedIndices[index] = true;
+					this.executeOkFunction();
+				}
+			}
+		}
+	}
+};
+
+Game.Screen.inventoryScreen = new Game.Screen.ItemListScreen({
+	caption: 'Inventory',
+	canSelect: false
+});
+
+Game.Screen.pickupScreen = new Game.Screen.ItemListScreen({
+	caption: 'Pick up which items?',
+	canSelect: true,
+	canSelectMultipleItems: true,
+	ok: function(selectedItems){
+		// Try to pick up everything, alert the player if not all can be
+		if (!this._player.pickupItems(Object.keys(selectedItems))) {
+			Game.sendMessage(this._player, "Your inventory is full! Not all items were picked up.");
+		}
+		return true;
+	}
+});
+
+Game.Screen.dropScreen = new Game.Screen.ItemListScreen({
+	caption: 'Drop which items?',
+	canSelect: true,
+	canSelectMultipleItems: false,
+	ok: function(selectedItems){
+		// Drop the selected item
+		this._player.dropItem(Object.keys(selectedItems)[0]);
+		return true;
+	}
+});

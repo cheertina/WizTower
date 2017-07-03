@@ -9,3 +9,17 @@ Game.Item = function(properties){
 // Make items inherit all the functionality from glyphs
 Game.Item.extend(Game.Glyph);
 
+Game.Item.prototype.describe = function() {
+	return this._name;
+};
+
+Game.Item.prototype.describeA = function(capital = false) {
+	let prefixes = capital ? ['A', 'An'] : ['a', 'an'];
+	let string = this.describe();
+	let firstLetter = string.charAt(0).toLowerCase();
+	// Naive solution, check for a vowel.  Doesn't handle vowel-sounding consanants
+	let prefix = 'aeiou'.indexOf(firstLetter) >= 0 ? 1 : 0;
+	
+	return prefixes[prefix] + ' ' + string;
+};
+

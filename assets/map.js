@@ -32,7 +32,7 @@ Game.Map = function(tiles, player){
 			this.addEntityAtRandomPosition(Game.EntityRepository.createRandom(), z);
 		}
 		for (let i = 0; i < 10; i++){
-			this.addItemAtRandomPosition(Game.EntityRepository.createRandom(),z);
+			this.addItemAtRandomPosition(Game.ItemRepository.createRandom(),z);
 		}
 	}
 	
@@ -166,7 +166,7 @@ Game.Map.prototype.updateEntityPosition = function(entity, oldX, oldY, oldZ){
 	}
 	// Make sure there's nothing there (this should already be done by the caller,
 	// but trusting that is how you break shit)
-	let key = entity.getX() + ',' + entity.getY() + ',' + entity.getZ();
+	let key = entity.getPos().str;
 	if (this._entities[key]) {
 		throw new Error('Tried to add an entity at an occupied position')
 	}
@@ -184,7 +184,7 @@ Game.Map.prototype.addEntityAtRandomPosition = function(entity, z){
 
 Game.Map.prototype.removeEntity = function(entity) {
 	// Remove the entity from the map
-	let key = entity.getX() + ',' + entity.getY() + ',' + entity.getZ();
+	let key = entity.getPos().str;
 	if (this._entities[key] == entity) {
 		delete this._entities[key];
 	}

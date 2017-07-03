@@ -95,8 +95,16 @@ Game.Entity.prototype.tryMove = function(x, y, z) {
 	if (tile.isWalkable()){
 		// Update the entity's position
 		this.setPosition(x, y, z);
+		let items = this.getMap().getItemsAt(x, y, z);
+		if (items){
+			if (items.length === 1){
+				Game.sendMessage(this, "You see %s.", [items[0].describeA()]);
+			} else {
+				Game.sendMessage(this, "There are several objects here.");
+			}
+		}
 		return true;
-	} else if (tile.isDiggable() && this.hasMixin('Digger')) {
+	}else if (tile.isDiggable() && this.hasMixin('Digger')) {
 		map.dig(x, y, z);
 		return true;
 	}
@@ -109,6 +117,14 @@ Game.Entity.prototype.getX    = function(){ return this._x; }
 Game.Entity.prototype.getY    = function(){ return this._y; }
 Game.Entity.prototype.getZ    = function(){ return this._z; }
 Game.Entity.prototype.getMap  = function(){ return this._map; }
+Game.Entity.prototype.getPos =  function(){ 
+	return {
+		x: this._x,
+		y: this._y,
+		z: this._z,
+		str: this._x + ',' + this._y + ',' + this._z
+	}
+}
 
 Game.Entity.prototype.setName = function(name){ this._name = name; }
 Game.Entity.prototype.setX    = function(x){ this._x = x; }
