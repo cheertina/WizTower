@@ -164,7 +164,7 @@ Game.Mixins.FungusActor = {	// Fungus cannot move, but can spread
 							  z: this.getZ()
 					}
 					if (this.getMap().isEmptyFloor(target.x, target.y, target.z)){
-						let entity = new Game.Entity(Game.Templates.Fungus);
+						let entity = Game.EntityRepository.create('fungus');
 						entity.setPosition(target.x, target.y, target.z);
 						this.getMap().addEntity(entity);
 						this._growthsRemaining--;
@@ -234,16 +234,14 @@ Game.sendMessageNearby = function(map, centerX, centerY, centerZ, message, args)
 }; // sendMessageNearby
 
 
-// Entity Templates
-Game.Templates = {}
-
-Game.Templates.Player = {
+// Entity Repository (and one-off player template)
+Game.PlayerTemplate = {
 	name: 'you',
 	team: 'player',
 	character: '@',
 	foreground: 'white',
 	background: 'black',
-	maxHP: 40,
+	maxHp: 40,
 	attackValue: 10,
 	sightRadius: 6,
 	mixins: [
@@ -255,15 +253,17 @@ Game.Templates.Player = {
 		Game.Mixins.Destructible]
 }; // Player Template
 
-Game.Templates.Fungus = {
+Game.EntityRepository = new Game.Repository('entities', Game.Entity);
+
+Game.EntityRepository.define('fungus', {
 	name: 'fungus',
 	character: 'F',
 	foreground: 'lime',
 	maxHp: 10,
 	mixins: [Game.Mixins.FungusActor, Game.Mixins.Destructible]
-}; // Fungus Template
+}); // Fungus Template
 
-Game.Templates.Bat = {
+Game.EntityRepository.define('bat', {
 	name: 'bat',
 	character: 'B',
 	foreground: 'white',
@@ -273,9 +273,9 @@ Game.Templates.Bat = {
 		Game.Mixins.WanderActor,
 		Game.Mixins.Attacker,
 		Game.Mixins.Destructible]
-}; // Bat Template
+}); // Bat Template
 
-Game.Templates.Newt = {
+Game.EntityRepository.define('newt', {
     name: 'newt',
     character: ':',
     foreground: 'yellow',
@@ -285,5 +285,5 @@ Game.Templates.Newt = {
 		Game.Mixins.WanderActor, 
 		Game.Mixins.Attacker,
 		Game.Mixins.Destructible]
-};
+});
 

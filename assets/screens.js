@@ -48,9 +48,8 @@ Game.Screen.playScreen = {
 		var tiles = new Game.Builder(width, height, depth).getTiles();
 		
 		// Create map from the tiles and our player object
-		this._player = new Game.Entity(Game.Templates.Player);
+		this._player = new Game.Entity(Game.PlayerTemplate);
 		this._map = new Game.Map(tiles, this._player)
-		//this._map = new Game.Map(map, this._player);  <--- old version
 		
 		// Start the map's engine
 		this._map.getEngine().start();
@@ -85,7 +84,7 @@ Game.Screen.playScreen = {
 			this._player.getY(),
 			this._player.getSightRadius(),
 			function(x,y,radius, visibility){
-				visibleCells[x + "," + y] = true;
+				visibleCells[x + ',' + y] = true;
 				// Mark visible cells as explored
 				map.setExplored(x, y, currentDepth, true);
 			}
@@ -97,20 +96,41 @@ Game.Screen.playScreen = {
 			for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
 				// Render all tiles that have ever been seen
 				if(map.isExplored(x, y, currentDepth)){
-					//Fetch the glyph for the tile and render it to the screen
-					// at the offest position
-					let tile = this._map.getTile(x, y, currentDepth);
+					//Fetch the glyph for the tile 
+					let glyph = this._map.getTile(x, y, currentDepth);
+					let foreground = glyph.getForeground();
 					
-					//If it has been seen but isn't currently visible,
-					// render it in darkgray
-					let foreground = visibleCells[x + "," + y] ?
-						tile.getForeground() : 'dimGray';
+					// If the cell is currently visible, see if there are
+					// items or entities to render instead of the tile glyph
+					if(visibleCells[x + ',' + y]){
+						
+						// Check  for items first, so that entities will render
+						// "on top" of them
+						let items = map.getItemsAt(x, y, currentDepth);
+
+						// If there are any items, render the last one
+						if (items){
+							glyph = items[items.length - 1]; 
+						}
+
+						// Check if we have an entity
+						if(map.getEntityAt(x, y, currentDepth)){
+							glyph = map.getEntityAt(x, y, currentDepth);
+						}
+						// Update foreground color, in case it changed
+						foreground = glyph.getForeground();
+					} else {
+						// Cell is not currently visible, but has been seen before
+						foreground = 'dimGray';
+					}
+					
+					//call the draw function and actually render it
 					display.draw(
 						x - topLeftX,
 						y - topLeftY,
-						tile.getChar(),
+						glyph.getChar(),
 						foreground,
-						tile.getBackground()
+						glyph.getBackground()
 					);
 				}
 			}

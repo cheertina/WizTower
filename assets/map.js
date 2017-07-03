@@ -8,6 +8,8 @@ Game.Map = function(tiles, player){
 	
 	// A hash table to hold all the entities
 	this._entities = {};
+	// And one for the items
+	this._items = {};
 	
 	// Create the engine and scheduler
 	this._scheduler = new ROT.Scheduler.Simple();
@@ -24,13 +26,13 @@ Game.Map = function(tiles, player){
 	// Add the player
 	this.addEntityAtRandomPosition(player, 0);
 	
-	// And some enemies
-	// Do this better
-	var templates = [Game.Templates.Fungus, Game.Templates.Bat, Game.Templates.Newt]
+	// And some random enemies and items
 	for (let z = 0; z < this._depth; z++){
 		for (let i = 0; i < 15; i++){
-			let template = templates[Math.floor(Math.random() * templates.length)];
-			this.addEntityAtRandomPosition(new Game.Entity(template), z);
+			this.addEntityAtRandomPosition(Game.EntityRepository.createRandom(), z);
+		}
+		for (let i = 0; i < 10; i++){
+			this.addItemAtRandomPosition(Game.EntityRepository.createRandom(),z);
 		}
 	}
 	
@@ -78,8 +80,38 @@ Game.Map.prototype.isEmptyFloor = function(x, y, z){
 	return this.getTile(x, y, z) == Game.Tile.floorTile && !this.getEntityAt(x, y, z);
 };
 
-// Entity-related
+// Items
+Game.Map.prototype.getItemsAt = function(x, y, z){
+	return this._items[x + ',' + y + ',' + z];
+}
 
+Game.Map.prototype.setItemsAt = function(x, y, z, items){
+	// If our items array is empty, delete the key from the table
+	let key = x + ',' + y + ',' + z;
+	if (items.length === 0){
+		if (this._items[key]){
+			delete this._items[key];
+		}
+	} else {
+		// Simply update the items at that key
+		this._items[key] = items;
+	}
+}
+
+Game.Map.prototype.addItem = function(x, y, z, item){
+	let key = x + ',' + y + ',' + z;
+	if (this._items[key]){
+		this._items[key].push(item);
+	}else this._items[key] = [item];
+}
+
+Game.Map.prototype.addItemAtRandomPosition = function(item, z){
+	let pos = this.getRandomFloorPosition(z);
+	this.addItem(pos.x, pos.y, pos.z, item);
+}
+
+
+// Entity-related
 Game.Map.prototype.getEntityAt = function(x, y, z){
 	return this._entities[x + ',' + y + ',' + z];
 }; // getEntityAt
@@ -164,7 +196,6 @@ Game.Map.prototype.removeEntity = function(entity) {
 }; // removeEntity
 
 // Vision/exploration
-
 Game.Map.prototype.setupFov = function(){
 	//keep 'this' in the map variable, so we don't lose it
 	var map = this;
@@ -210,6 +241,7 @@ Game.Map.prototype.isExplored = function(x, y, z) {
         return false;
     }
 };
+
 
 
 

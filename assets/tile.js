@@ -1,4 +1,4 @@
-//not a graphical tile, but a clas to hold information about the 
+//not a graphical tile, but a class to hold information about the 
 //glyph we use and other properties of a specific location on our map
 
 Game.Tile = function(properties){

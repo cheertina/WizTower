@@ -65,11 +65,6 @@ Game.Builder.prototype._generateLevel = function() {
 	
 } // _generateLevel()
 
-
-
-
-
-
 Game.Builder.prototype._canFillRegion = function(x, y, z){
 	// Make sure the tile is in bounds
 	if (x < 0 || x >= this._width ||
