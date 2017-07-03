@@ -32,8 +32,7 @@ Game.Screen.startScreen = {
 Game.Screen.playScreen = {
 	_map: null,
     _player: null,
-	
-	
+	_gameEnded : false,
 	
 	enter: function() {
 		console.log( "Entered playScreen." );
@@ -105,7 +104,7 @@ Game.Screen.playScreen = {
 					//If it has been seen but isn't currently visible,
 					// render it in darkgray
 					let foreground = visibleCells[x + "," + y] ?
-						tile.getForeground() : 'darkGray';
+						tile.getForeground() : 'dimGray';
 					display.draw(
 						x - topLeftX,
 						y - topLeftY,
@@ -118,8 +117,8 @@ Game.Screen.playScreen = {
 		}
 		// Render the entities
 		var entities = this._map.getEntities();
-		for (let i = 0; i < entities.length; i++){
-			let entity = entities[i];
+		for (var key in entities){
+			let entity = entities[key];
 			//only render it if it actually fits in the viewport
 			if (visibleCells[entity.getX() + ',' + entity.getY()] && //make sure it's visible first
 				entity.getX() >= topLeftX &&	// then check the rest of the conditions
@@ -157,10 +156,11 @@ Game.Screen.playScreen = {
         if (inputType === 'keydown') {
             // If enter is pressed, go to the win screen
             // If escape is pressed, go to lose screen
-            if (inputData.keyCode === ROT.VK_RETURN) {
-                Game.switchScreen(Game.Screen.winScreen);
-            } else if (inputData.keyCode === ROT.VK_ESCAPE) {
-                Game.switchScreen(Game.Screen.loseScreen);
+            if (this._gameEnded){
+				if (inputData.keyCode === ROT.VK_RETURN) {
+					Game.switchScreen(Game.Screen.loseScreen);
+				}
+				return;
             } else {
 				// Movement
 				switch(inputData.keyCode){
@@ -192,6 +192,7 @@ Game.Screen.playScreen = {
     }, // handleInput()
 	
 	// Move the "center" of viewport around the map
+	// TODO: This seems like it really belongs elsewhere
 	move: function(dX, dY, dZ) {
 		
 		let newX = this._player.getX() + dX;
@@ -199,7 +200,11 @@ Game.Screen.playScreen = {
 		let newZ = this._player.getZ() + dZ;
 		this._player.tryMove(newX, newY, newZ, this._map);
 		
-	}	// move()
+	},	// move()
+	
+	setGameEnded: function(gameEnded){
+		this._gameEnded = gameEnded;
+	}
 }
 
 // Define our winning screen

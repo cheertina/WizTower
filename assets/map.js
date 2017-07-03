@@ -6,8 +6,8 @@ Game.Map = function(tiles, player){
 	this._width  = tiles[0].length;
 	this._height = tiles[0][0].length;
 	
-	// A list to hold all the entities
-	this._entities = [];
+	// A hash table to hold all the entities
+	this._entities = {};
 	
 	// Create the engine and scheduler
 	this._scheduler = new ROT.Scheduler.Simple();
@@ -21,11 +21,16 @@ Game.Map = function(tiles, player){
 	this._explored = new Array(this._depth);
 	this._setupExploredArray();
 	
-	// add the player and some random fungi on each floor
+	// Add the player
 	this.addEntityAtRandomPosition(player, 0);
+	
+	// And some enemies
+	// Do this better
+	var templates = [Game.Templates.Fungus, Game.Templates.Bat, Game.Templates.Newt]
 	for (let z = 0; z < this._depth; z++){
-		for (let i = 0; i < 25; i++){
-			this.addEntityAtRandomPosition(new Game.Entity(Game.Templates.Fungus), z);
+		for (let i = 0; i < 15; i++){
+			let template = templates[Math.floor(Math.random() * templates.length)];
+			this.addEntityAtRandomPosition(new Game.Entity(template), z);
 		}
 	}
 	
@@ -76,16 +81,7 @@ Game.Map.prototype.isEmptyFloor = function(x, y, z){
 // Entity-related
 
 Game.Map.prototype.getEntityAt = function(x, y, z){
-	// Look through the entity list and see
-	// if any of them have the right coords
-	for (let i = 0; i < this._entities.length; i++) {
-		if(this._entities[i].getX() == x 
-		&& this._entities[i].getY() == y
-		&& this._entities[i].getZ() == z){
-			return this._entities[i];
-		}
-	}
-	return false;
+	return this._entities[x + ',' + y + ',' + z];
 }; // getEntityAt
 
 Game.Map.prototype.getEntitiesWithinRadius = function(centerX, centerY, centerZ, radius){
@@ -96,35 +92,55 @@ Game.Map.prototype.getEntitiesWithinRadius = function(centerX, centerY, centerZ,
 	let topY 	= centerY - radius;
 	let bottomY = centerY + radius;
 	// Z has no range, must match exactly
-	for (let i = 0; i < this._entities.length; i++) {
-		if (this._entities[i].getX() >= leftX 	&&
-			this._entities[i].getX() <= rightX 	&&
-		    this._entities[i].getY() >= topY 	&&
-		    this._entities[i].getY() <= bottomY &&
-			this._entities[i].getZ() == centerZ) {
-			results.push(this._entities[i]);
+	// We've deviated from the tutorial pretty significantly here
+	// But if we did it right, it should still work (and should be faster)
+	for (let x = leftX; x <= rightX; x++) {
+		for (let y = topY; y <= bottomY; y++){
+			if (this._entities.hasOwnProperty(x + ',' + y + ',' + centerZ)){
+				results.push(this._entities[x + ',' + y + ',' + centerZ])
+			}
 		}
 	}
 	return results;
 }; // getEntitiesWithinRadius
 
 Game.Map.prototype.addEntity = function(entity){
-	// Make sure it's in bounds
-	if (entity.getX() < 0 || entity.getX() >= this._width ||
-		entity.getY() < 0 || entity.getY() >= this._height ||
-		entity.getZ() < 0 || entity.getZ() >= this._depth) {
-		throw new Error('Adding entity out of bounds.');
-	}
 	// Update the entity's map
 	entity.setMap(this);
-	// Add this entity to the list of entities
-	this._entities.push(entity);
+	// Add this entity to the list of entities using
+	// updateEntityPosition with no previous location
+	this.updateEntityPosition(entity);
 	// Check if this entity is an actor, and if so
 	// add them to the scheduler
 	if (entity.hasMixin('Actor')){
 		this._scheduler.add(entity, true);
 	}
 }; // addEntity
+
+Game.Map.prototype.updateEntityPosition = function(entity, oldX, oldY, oldZ){
+	// See if we passed a set of old coords, then
+	// delete the old key if it's the same entity
+	if (typeof oldX !== "undefined") {
+		let oldKey = oldX + ',' + oldY + ',' + oldZ;
+		if (this._entities[oldKey] == entity){
+			delete this._entities[oldKey];
+		}
+	}
+	// Make sure it's in bounds
+	if (entity.getX() < 0 || entity.getX() >= this._width ||
+		entity.getY() < 0 || entity.getY() >= this._height ||
+		entity.getZ() < 0 || entity.getZ() >= this._depth) {
+		throw new Error('Adding entity out of bounds.');
+	}
+	// Make sure there's nothing there (this should already be done by the caller,
+	// but trusting that is how you break shit)
+	let key = entity.getX() + ',' + entity.getY() + ',' + entity.getZ();
+	if (this._entities[key]) {
+		throw new Error('Tried to add an entity at an occupied position')
+	}
+	// Add entity to the table of entities
+	this._entities[key] = entity
+}; // updateEntityPosition
 
 Game.Map.prototype.addEntityAtRandomPosition = function(entity, z){
 	let position = this.getRandomFloorPosition(z);
@@ -135,12 +151,10 @@ Game.Map.prototype.addEntityAtRandomPosition = function(entity, z){
 }; // addEntityAtRandomPosition
 
 Game.Map.prototype.removeEntity = function(entity) {
-	// Find the entity in the list of entities if it is present
-	for (let i = 0; i < this._entities.length; i++){
-		if (this._entities[i] == entity){
-			this._entities.splice(i,1);
-			break;
-		}
+	// Remove the entity from the map
+	let key = entity.getX() + ',' + entity.getY() + ',' + entity.getZ();
+	if (this._entities[key] == entity) {
+		delete this._entities[key];
 	}
 	// If the entity is an actor, remove them from the schedule
 	if (entity.hasMixin('Actor')) {
@@ -196,5 +210,6 @@ Game.Map.prototype.isExplored = function(x, y, z) {
         return false;
     }
 };
+
 
 
