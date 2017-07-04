@@ -56,6 +56,8 @@ Game.DynamicGlyph.prototype.hasMixin = function(mix){
 Game.DynamicGlyph.prototype.getName = function(){ return this._name; }
 Game.DynamicGlyph.prototype.setName = function(name){ this._name = name; }
 
+// Description variants
+
 Game.DynamicGlyph.prototype.describe = function() {
 	return this._name;
 };
@@ -69,3 +71,9 @@ Game.DynamicGlyph.prototype.describeA = function(capital = false) {
 	
 	return prefixes[prefix] + ' ' + string;
 };
+
+Game.DynamicGlyph.prototype.describeThe = function (capital = false) {
+	let prefix = capital ? 'The' : 'the';
+	return prefix + ' ' + this.describe();
+}
+

@@ -10,10 +10,11 @@ Game.PlayerTemplate = {
 	sightRadius: 6,
 	inventorySlots: 22,
 	mixins: [
-		Game.EntityMixins.Digger,
-		Game.EntityMixins.InventoryHolder,
-		Game.EntityMixins.Sight,
 		Game.EntityMixins.PlayerActor,
+		Game.EntityMixins.Sight,
+		Game.EntityMixins.Digger,
+		Game.EntityMixins.FoodConsumer,
+		Game.EntityMixins.InventoryHolder,
 		Game.EntityMixins.MessageRecipient,
 		Game.EntityMixins.Attacker,
 		Game.EntityMixins.Destructible]

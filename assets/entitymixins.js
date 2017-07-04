@@ -134,12 +134,53 @@ Game.EntityMixins.InventoryHolder = { // Entity can pickup/drop/carry items
 	}
 };
 
+Game.EntityMixins.FoodConsumer = { // Entity can/must eat
+	name: 'FoodConsumer',
+	init: function(template){
+		this._maxFullness = template['maxFullness'] || 1000;
+		// Start half-full by default
+		this._fullness = template['fullness'] || (this._maxFullness / 2);
+		// Number of points to subtract each turn
+		this._fullnessDepletionRate = template['fullnessDepletionRate'] || 1;
+	},
+	addTurnHunger: function(){
+		this.modifyFullnessBy(-this._fullnessDepletionRate);
+	},
+	modifyFullnessBy: function(points) {
+		this._fullness = this._fullness + points;
+		if (this._fullness <= 0) {
+			// TODO: Take damage equal to how negative your fullness is
+			// this.takeDamage(null, -this._fullness);
+			// For now, we'll do it the tutorial's way
+			this.kill();
+		} else if (this._fullness > this.maxFullness){
+			this.kill();
+		}
+	},
+	getHungerState: function(numeric = false) {
+		if (numeric) { return 'Hunger: ' + this._fullness; }
+		// This math looks weird, but it's right
+		let percent = this._maxFullness / 100;
+		if (this._fullness <= 5 * percent) { return 'Starving'; }
+		else if (this._fullness <= 25 * percent) { return 'Hungry'; }
+		else if (this._fullness >= 95 * percent) { return 'Oversatiated'; }
+		else if (this._fullness >= 75 * percent) { return 'Full'; }
+		else { return 'Not Hungry'; }
+	}
+};
+
 // AI Mixins - 'Actor' group
 Game.EntityMixins.PlayerActor = {
 // Main player's actor mixin
 	name: 'PlayerActor',
 	groupName: 'Actor',
 	act: function(){
+		// This can be called twice if we 'die' twice or hunger kills us,
+		// so bail out if we're already dead
+		if (this._acting) { return; }
+		this._acting = true;
+		
+		this.addTurnHunger();
 		// Detect if the game is over
         if (!this.isAlive()) {
             Game.Screen.playScreen.setGameEnded(true);
@@ -150,10 +191,12 @@ Game.EntityMixins.PlayerActor = {
 		Game.refresh();
 		// Lock the engine and wait asynchronously
 		// for keyboard input
-		Game.Screen.playScreen._turns++;
 		this.getMap().getEngine().lock();
+		Game.Screen.playScreen._turns++;
 		// Clear the message queue
 		this.clearMessages();
+		
+		this._acting = false;
 	}
 };
 

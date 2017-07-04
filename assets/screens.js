@@ -171,11 +171,14 @@ Game.Screen.playScreen = {
 		
 		// Show hp, location, other stats TBD
 		let status = '%c{white}%b{black}';
-		status += vsprintf('HP: %d/%d   (%d, %d)   Turns: %d',
+		status += vsprintf('HP: %d/%d   (%d, %d)',
 			[this._player.getHp(), this._player.getMaxHp(),
-			this._player.getX(), this._player.getY(), this._turns]);
-		display.drawText(0, screenHeight, status);
-		
+			this._player.getX(), this._player.getY()]);
+		display.drawText(0, screenHeight, status); // this hits row 1 of 2 blank at the bottom
+		// NOTE: screenHeight-1 is the last row of the playing field
+		// show hunger in row two, right side
+		let hungerState = this._player.getHungerState(true);	// use true for numeric debug. turn counting
+		display.drawText(screenWidth - hungerState.length, screenHeight+1, hungerState)
 		
     }, //render()
 	
@@ -204,41 +207,53 @@ Game.Screen.playScreen = {
 				case ROT.VK_NUMPAD7: this.move(-1, -1, 0); break;
 				case ROT.VK_NUMPAD8: this.move( 0, -1, 0); break;
 				case ROT.VK_NUMPAD9: this.move( 1, -1, 0); break;				
-				//  TODO: Make sure these are "costing" turns as appropriate - we've deviated from the tutorial
-				// I _think_ that any branch that hits a "return" should be free,
-				// and anything that doesn't needs to hit a "break" to avoid fall-through
-				// turns are spent if the executeOkFunction on the subscreen returns true
-				case ROT.VK_I:	// INVENTORY
-					if(this._player.getItems().filter(function(x){return x;}).length === 0) {
-						// If the player's inventory is empty, send a message
-						Game.sendMessage(this._player, "You're not carrying anything!");
-						Game.refresh();
+				/*  TODO: Make sure these are "costing" turns as appropriate - we've deviated from the tutorial
+				*  I _think_ that any branch that hits a "return" should be free,
+				*  and anything that doesn't needs to hit a "break" to avoid fall-through
+				*  turns are spent if the executeOkFunction on the subscreen returns true
+				*  there might be a an automatic cost on any branch that calls executeOkFunction
+				*  but you can't see that here, so grab a console.log, and good luck
+				*  Now with unnecessary (optional) braces, for nice folding */
+				
+				case ROT.VK_E:{ // EAT COMESTIBLE
+					if(Game.Screen.eatScreen.setup(this._player, this._player.getItems())){
+						this.setSubScreen(Game.Screen.eatScreen);
 					} else {
-						// Show the inventory
-						Game.Screen.inventoryScreen.setup(this._player, this._player.getItems());
-						this.setSubScreen(Game.Screen.inventoryScreen);
-						break;
-					}
-					return; // Looking at the inventory is "free"
-				case ROT.VK_D:	// DROP ITEM
-					if(this._player.getItems().filter(function(x){return x;}).length === 0) {
 						// If the player's inventory is empty, send a message and don't spend a turn
-						Game.sendMessage(this._player, "You're not carrying anything!");
+						Game.sendMessage(this._player, "You're not carrying anything to eat!");
 						Game.refresh();
-						return;
-					} else {
-						// Show the drop screen
-						Game.Screen.dropScreen.setup(this._player, this._player.getItems());
-						this.setSubScreen(Game.Screen.dropScreen);
-						break;
 					}
 					return;
-				case ROT.VK_COMMA:	// PICK UP ITEMS
+				}
+				
+				case ROT.VK_D:{	// DROP ITEM
+					// Show the drop screen if there's anything in the inventory
+					if(Game.Screen.dropScreen.setup(this._player, this._player.getItems())){
+						this.setSubScreen(Game.Screen.dropScreen);
+					} else {
+						// If the player's inventory is empty, send a message and don't spend a turn
+						Game.sendMessage(this._player, "You're not carrying anything to drop!");
+						Game.refresh();
+					}
+					return;
+				}
+				
+				case ROT.VK_I:{	// INVENTORY
+					if(Game.Screen.inventoryScreen.setup(this._player, this._player.getItems())){
+						this.setSubScreen(Game.Screen.inventoryScreen);
+					} else {
+						Game.sendMessage(this._player, "You are not carrying anything!");
+						Game.refresh();
+					}
+					return; // Looking at the inventory is "free"
+				}
+				
+				case ROT.VK_COMMA:{	// PICK UP ITEMS
 					let items = this._map.getItemsAt(this._player.getX(), this._player.getY(), this._player.getZ())
 					// If there are no items, show a message
 					if (!items){
 						Game.sendMessage(this._player, "There is nothing here to pick up.");
-						return;
+						//return;
 					} else if (items.length === 1) {
 						let item = items[0];
 						if(this._player.pickupItems([0])) {
@@ -246,13 +261,17 @@ Game.Screen.playScreen = {
 							break;
 						} else {
 							Game.sendMessage(this._player, "Your inventory is full! Nothing was picked up.");
-							return;
+							//return;
 						}
 					} else { // Show the pickup screen since there are multiple items
 						Game.Screen.pickupScreen.setup(this._player, items);
 						this.setSubScreen(Game.Screen.pickupScreen);
-						break;
+						//return;
 					}
+					return;	// We should always get here unless we break, so no need for the other three
+				}	
+				
+				// DEFAULT CASE - you hit a button that doesn't do anything
 				default: return;
 			}
 				// This is where we actually end our turn
@@ -335,6 +354,9 @@ Game.Screen.loseScreen = {
 Game.Screen.ItemListScreen = function(template){
 	this._caption = template['caption'];
 	this._okFunction = template['ok'];
+	// Function to filter items for spcific lists (edible, weapons, etc.)
+	// By default, use the identity function (all items)
+	this._filterFunction = template['filterFunction'] || function(x) { return x; }
 	// Whether items are selectable
 	this._canSelectItem = template['canSelect'];
 	// Whether the user can select multiple items
@@ -344,9 +366,24 @@ Game.Screen.ItemListScreen = function(template){
 Game.Screen.ItemListScreen.prototype.setup = function(player, items){
 	this._player = player;
 	// Should be called before switching to the screen
-	this._items = items;
+	
+	// Iterate over all items, keep (and count) only the ones that match
+	// our filterFunction
+	let count = 0;
+	let that = this;
+	this._items = items.map(function(item) {
+		// return the item, if it matches, or null if not
+		if(that._filterFunction(item)) {
+			count++;
+			return item;
+		} else {
+			return null;
+		}
+	});
 	// Clean the set of selected indices
 	this._selectedIndices = {};
+	Game._IMSOCONFUSED = this._selectedIndices;
+	return count;
 };
 
 Game.Screen.ItemListScreen.prototype.render = function(display) {
@@ -364,9 +401,12 @@ Game.Screen.ItemListScreen.prototype.render = function(display) {
 			let selectionState = (this._canSelectItem && this._canSelectMultipleItems && 
 				this._selectedIndices[slot]) ? '+' : '-';
 			// Render at the correct row
-			dispStr = letter + ' ' + selectionState + ' [ ] ' + this._items[slot].describe();
+			dispStr = letter + ' ' + selectionState+ ' ';
+			// Display the character for the item, in the right color
+			dispStr += '%c{'+ this._items[slot].getForeground()+'}' + this._items[slot].getChar() + '%c{} ';
+			dispStr += this._items[slot].describe();
 			display.drawText(0, row, dispStr);
-			display.draw(5, row, this._items[slot].getChar(), this._items[slot].getForeground(), this._items[slot].getBackground());
+			//display.draw(5, row, this._items[slot].getChar(), this._items[slot].getForeground(), this._items[slot].getBackground());
 			
 			
 			row++;
@@ -393,8 +433,8 @@ Game.Screen.ItemListScreen.prototype.handleInput = function(inputType, inputData
 		// If the user hit escape, hit enter and can't select an item, or hit enter
 		// without any items selected, bail out
 		if (inputData.keyCode === ROT.VK_ESCAPE || 
-			(inputData.keycode === ROT.VK_RETURN && 
-				(!this._canSelectItem | Object.keys(this._selectedIndices).length === 0))) {
+			(inputData.keyCode === ROT.VK_RETURN && 
+				(!this._canSelectItem || Object.keys(this._selectedIndices).length === 0))) {
 			Game.Screen.playScreen.setSubScreen(null);
 		// Handle pressing return when items are selected
 		} else if (inputData.keyCode === ROT.VK_RETURN) {
@@ -441,12 +481,29 @@ Game.Screen.pickupScreen = new Game.Screen.ItemListScreen({
 });
 
 Game.Screen.dropScreen = new Game.Screen.ItemListScreen({
-	caption: 'Drop which items?',
+	caption: 'Drop which item?',
 	canSelect: true,
 	canSelectMultipleItems: false,
 	ok: function(selectedItems){
 		// Drop the selected item
 		this._player.dropItem(Object.keys(selectedItems)[0]);
+		return true;
+	}
+});
+
+Game.Screen.eatScreen = new Game.Screen.ItemListScreen({
+	caption: 'Eat which item?',
+	canSelect: true,
+	canSelectMultipleItems: false,
+	filterFunction: function(item) { return item && item.hasMixin('Edible'); },
+	ok: function(selectedItems){
+		let key = Object.keys(selectedItems)[0];
+		let item = selectedItems[key];
+		Game.sendMessage(this._player, "You eat %s.", [item.describeThe()]);
+		item.eat(this._player)
+		if( !item.hasRemainingConsumptions()) {
+			this._player.removeItem(key);
+		}
 		return true;
 	}
 });
