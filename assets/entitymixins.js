@@ -36,16 +36,10 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 	getDefenseValue: function(){ return this._defenseValue; },
 	takeDamage: function(attacker, damage) {
 		this._hp -= damage;
-		// If hp drops to 0 or less, remove this entity
+		// If hp drops to 0 or less, remove ourselves from the map via Game.Entity.kill()
 		if (this._hp <= 0){
 			Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
-            Game.sendMessage(this, 'You die!');
-            // Don't remove the player - their act() function handles transition to Game Over screen
-			if(this.hasMixin(Game.EntityMixins.PlayerActor)){
-				this.act();
-			} else {
-				this.getMap().removeEntity(this); 
-			}
+            this.kill();
 		}
 	}
 }; //Destructible
@@ -147,7 +141,7 @@ Game.EntityMixins.PlayerActor = {
 	groupName: 'Actor',
 	act: function(){
 		// Detect if the game is over
-        if (this.getHp() < 1) {
+        if (!this.isAlive()) {
             Game.Screen.playScreen.setGameEnded(true);
             // Send a last message to the player
             Game.sendMessage(this, 'You have died... Press [Enter] to continue!');

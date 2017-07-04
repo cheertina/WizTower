@@ -3,58 +3,19 @@ Game.Entity = function(properties){
 	properties = properties || {};
 	
 	// Call the glyph's constructor with our set of properties
-	Game.Glyph.call(this, properties);
+	Game.DynamicGlyph.call(this, properties);
 	
-	// Instantiate any properties from the passed object
-	this._name = properties['name'] || '';
+	// Instantiate Entity-only properties from the passed object
+	this._alive = true;
 	this._x = properties['x'] || 0;
 	this._y = properties['y'] || 0;
 	this._z = properties['z'] || 0;
 	this._team = properties['team'] || 'monster';
 	this._map = null;
 	
-	// Create an object which will keep track of the mixins
-	// that are attached to this entity based on the name (of the mixin)
-	this._attachedMixins = {};
-	// And a similar object for mixin groups
-	this._attachedMixinGroups = {};
-	
-	// Set up the object's mixins
-	var mixins = properties['mixins'] || [];
-	for (let i = 0; i < mixins.length; i++) {
-		
-		// From each mixin, copy over all properties except
-		// the name and init properties.  We also make sure
-		// not to override any properties that already exist
-		for (let key in mixins[i]){
-			if (key != 'init' && key != 'name' && !this.hasOwnProperty(key)) {
-				this[key] = mixins[i][key];
-			}
-		}
-	
-		// Add the name of this mixin to our attached mixins
-		this._attachedMixins[mixins[i].name] = true;
-		// And add the mixin group name, too, if it exists
-		if(mixins[i].groupName) {
-			this._attachedMixinGroups[mixins[i].groupName] = true;
-		}
-		// Finally, call the init function if it exists
-		if(mixins[i].init) {
-			mixins[i].init.call(this, properties);
-		}
-	}
 };	// Constructor
 
-Game.Entity.extend(Game.Glyph);
-
-Game.Entity.prototype.hasMixin = function(mix){
-	// Allow passing either the mixin itself or the name / group name as a string
-	if (typeof mix === 'object') {
-        return this._attachedMixins[mix.name];
-    } else {
-        return this._attachedMixins[mix] || this._attachedMixinGroups[mix];
-    }
-}
+Game.Entity.extend(Game.DynamicGlyph);
 
 Game.Entity.prototype.tryMove = function(x, y, z) {
 	var map = this.getMap()
@@ -111,26 +72,45 @@ Game.Entity.prototype.tryMove = function(x, y, z) {
 	return false;
 }; // tryMove()
 
+Game.Entity.prototype.kill = function(message) {
+	// You cannot kill that which is already dead
+	if (!this._alive) {	return; } // bail out
+	
+	this._alive = false;
+	if (message) {
+		Game.sendMessage(this, message);
+	} else {
+		Game.sendMessage(this, "You have died!");
+	}
+	
+	// Check if the player died, and if so call act() to prompt the user
+	if (this.hasMixin(Game.EntityMixins.PlayerActor)) {
+		this.act();
+	} else {
+		this.getMap().removeEntity(this);
+	}
+};
+
+
 // Getters & Setters
-Game.Entity.prototype.getName = function(){ return this._name; }
-Game.Entity.prototype.getX    = function(){ return this._x; }
-Game.Entity.prototype.getY    = function(){ return this._y; }
-Game.Entity.prototype.getZ    = function(){ return this._z; }
-Game.Entity.prototype.getMap  = function(){ return this._map; }
-Game.Entity.prototype.getPos =  function(){ 
+Game.Entity.prototype.getX    = function(){ return this._x; };
+Game.Entity.prototype.getY    = function(){ return this._y; };
+Game.Entity.prototype.getZ    = function(){ return this._z; };
+Game.Entity.prototype.isAlive = function(){ return this._alive; };
+Game.Entity.prototype.getMap  = function(){ return this._map; };
+Game.Entity.prototype.getPos  = function(){ 
 	return {
 		x: this._x,
 		y: this._y,
 		z: this._z,
 		str: this._x + ',' + this._y + ',' + this._z
-	}
-}
+	};
+};
 
-Game.Entity.prototype.setName = function(name){ this._name = name; }
-Game.Entity.prototype.setX    = function(x){ this._x = x; }
-Game.Entity.prototype.setY    = function(y){ this._y = y; }
-Game.Entity.prototype.setZ    = function(z){ this._z = z; }
-Game.Entity.prototype.setMap  = function(map){ this._map = map; }
+Game.Entity.prototype.setX    = function(x){ this._x = x; };
+Game.Entity.prototype.setY    = function(y){ this._y = y; };
+Game.Entity.prototype.setZ    = function(z){ this._z = z; };
+Game.Entity.prototype.setMap  = function(map){ this._map = map; };
 Game.Entity.prototype.setPosition = function(x, y, z) {
 	let oldX = this._x;
 	let oldY = this._y;
