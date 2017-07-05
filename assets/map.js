@@ -35,6 +35,11 @@ Game.Map = function(tiles, player){
 			this.addItemAtRandomPosition(Game.ItemRepository.createRandom(),z);
 		}
 	}
+	// Add one each of our weapons and armor
+	let templates = ['dagger', 'sword', 'staff', 'tunic', 'chainmail', 'platemail'];
+	for (let i = 0; i < templates.length; i++){
+		this.addItemAtRandomPosition(Game.ItemRepository.create(templates[i]), Math.floor(this._depth * Math.random()));
+	}
 	
 	
 }; // Constructor
@@ -73,7 +78,12 @@ Game.Map.prototype.getRandomFloorPosition = function(z) {
 		x = Math.floor(Math.random() * this._width);
 		y = Math.floor(Math.random() * this._height);
 	} while(!this.isEmptyFloor(x, y, z));
-	return {x: x, y: y, z: z};
+	return {
+		x: x,
+		y: y,
+		z: z,
+		str: x + ',' + y + ',' + z
+	};
 };  // getRandomFloorPosition
 
 Game.Map.prototype.isEmptyFloor = function(x, y, z){
@@ -98,8 +108,8 @@ Game.Map.prototype.setItemsAt = function(x, y, z, items){
 	}
 }
 
-Game.Map.prototype.addItem = function(x, y, z, item){
-	let key = x + ',' + y + ',' + z;
+Game.Map.prototype.addItem = function(key, item){
+	// key = x + ',' + y + ',' + z - use getPos().str
 	if (this._items[key]){
 		this._items[key].push(item);
 	}else this._items[key] = [item];
@@ -107,7 +117,7 @@ Game.Map.prototype.addItem = function(x, y, z, item){
 
 Game.Map.prototype.addItemAtRandomPosition = function(item, z){
 	let pos = this.getRandomFloorPosition(z);
-	this.addItem(pos.x, pos.y, pos.z, item);
+	this.addItem(pos.str, item);
 }
 
 

@@ -1,7 +1,6 @@
 Game.ItemMixins = {};
 
-// Edible mixins
-Game.ItemMixins.Edible = {
+Game.ItemMixins.Edible = { // Item can be consumed as food
 	name: 'Edible',
 	init: function(template) {
 		// Number of food points
@@ -27,4 +26,19 @@ Game.ItemMixins.Edible = {
 		desc += this._name;
 		return desc;
 	}
-}
+} // Edible
+
+Game.ItemMixins.Equippable = {	// Item can be worn or wielded
+	name: 'Equippable',
+	init: function(template){
+		this._attackValue = template['attackValue'] || 0;
+		this._defenseValue = template['defenseValue'] || 0;
+		this._wieldable = template['wieldable'] || false;
+		this._wearable = template['wearable'] || false;
+	},
+	getAttackValue: function(){ return this._attackValue; },
+	getDefenseValue: function(){ return this._defenseValue; },
+	isWieldable: function(){ return this._wieldable; },
+	isWearable: function(){ return this._wearable; }
+};
+

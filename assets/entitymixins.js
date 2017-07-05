@@ -8,7 +8,15 @@ Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 	init: function(template){
 		this._attackValue = template['attackValue'] || 1;
 	},
-	getAttackValue: function(){ return this._attackValue; },
+	getAttackValue: function(){
+		let modifier = 0;
+		// Take weapons/armor into consideration, if neccessary
+		if (this.hasMixin(Game.EntityMixins.Equipper)) {
+			if (this.getWeapon()) { modifier += this.getWeapon().getAttackValue() }
+			if (this.getArmor()) { modifier += this.getArmor().getAttackValue() }
+		}
+		return this._attackValue + modifier;
+	},
 	attack: function(target){
 		if(target.hasMixin('Destructible')){
 			let attack = this.getAttackValue();
@@ -33,12 +41,23 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 	},
 	getHp: function() {	return this._hp; },
 	getMaxHp: function(){ return this._maxHp; },
-	getDefenseValue: function(){ return this._defenseValue; },
+	getDefenseValue: function(){
+		let modifier = 0;
+		// Take weapons/armor into consideration, if neccessary
+		if (this.hasMixin(Game.EntityMixins.Equipper)) {
+			if (this.getWeapon()) { modifier += this.getWeapon().getDefenseValue() }
+			if (this.getArmor()) { modifier += this.getArmor().getDefenseValue() }
+		}
+		return this._defenseValue + modifier;
+	},
 	takeDamage: function(attacker, damage) {
 		this._hp -= damage;
 		// If hp drops to 0 or less, remove ourselves from the map via Game.Entity.kill()
 		if (this._hp <= 0){
 			Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
+			if (this.hasMixin(Game.EntityMixins.CorpseDropper)) {
+				this.tryDropCorpse();
+			}
             this.kill();
 		}
 	}
@@ -67,6 +86,61 @@ Game.EntityMixins.Sight = { // Signifies that our entity posseses a field of vis
 	}
 };
 
+
+Game.EntityMixins.FoodConsumer = { // Entity can/must eat
+	name: 'FoodConsumer',
+	init: function(template){
+		this._maxFullness = template['maxFullness'] || 1000;
+		// Start half-full by default
+		this._fullness = template['fullness'] || (this._maxFullness / 2);
+		// Number of points to subtract each turn
+		this._fullnessDepletionRate = template['fullnessDepletionRate'] || 1;
+	},
+	addTurnHunger: function(){
+		this.modifyFullnessBy(-this._fullnessDepletionRate);
+	},
+	modifyFullnessBy: function(points) {
+		this._fullness = this._fullness + points;
+		if (this._fullness <= 0) {
+			// TODO: Take damage equal to how negative your fullness is
+			// this.takeDamage(null, -this._fullness);
+			// For now, we'll do it the tutorial's way
+			this.kill();
+		} else if (this._fullness > this.maxFullness){
+			this.kill();
+		}
+	},
+	getHungerState: function(numeric = false) {
+		if (numeric) { return 'Hunger: ' + this._fullness; }
+		// This math looks weird, but it's right
+		let percent = this._maxFullness / 100;
+		if (this._fullness <= 5 * percent) { return 'Starving'; }
+		else if (this._fullness <= 25 * percent) { return 'Hungry'; }
+		else if (this._fullness >= 95 * percent) { return 'Oversatiated'; }
+		else if (this._fullness >= 75 * percent) { return 'Full'; }
+		else { return 'Not Hungry'; }
+	}
+};
+
+Game.EntityMixins.CorpseDropper = { // Entity can drop a corpse when killed
+	name: 'CorpseDropper',
+	init: function(template) {
+		// % chance to drop corpse
+		this._corpseDropRate = template['corpseDropRate'] || 100;
+	},
+	tryDropCorpse: function() {
+		if (Math.round(Math.random() * 100) < this._corpseDropRate) {
+			// Create a new corpse item and drop it
+			this._map.addItem(this.getPos().str, 
+				Game.ItemRepository.create('corpse', {
+					name: this._name + ' corpse',
+					foreground: this._foreground
+				}));
+		}
+	}
+}
+
+// Item-related
 Game.EntityMixins.InventoryHolder = { // Entity can pickup/drop/carry items
 	name: 'InventoryHolder',
 	init: function(template) {
@@ -92,6 +166,7 @@ Game.EntityMixins.InventoryHolder = { // Entity can pickup/drop/carry items
 		return false;
 	},
 	removeItem: function(slot){
+		if (this._items[slot] && this.hasMixin(Game.EntityMixins.Equipper)) { this.unequip(this._items[slot]); }
 		this._items[slot] = null;
 	},
 	canAddItem: function(item) {
@@ -128,44 +203,29 @@ Game.EntityMixins.InventoryHolder = { // Entity can pickup/drop/carry items
 	},
 	dropItem: function(slot){
 		if(this._items[slot]) {
-			this._map.addItem(this.getX(), this.getY(), this.getZ(), this._items[slot]);
+			this._map.addItem(this.getPos().str, this._items[slot]);
 			this.removeItem(slot);
 		}
 	}
 };
 
-Game.EntityMixins.FoodConsumer = { // Entity can/must eat
-	name: 'FoodConsumer',
+Game.EntityMixins.Equipper = {
+	name: 'Equipper',
 	init: function(template){
-		this._maxFullness = template['maxFullness'] || 1000;
-		// Start half-full by default
-		this._fullness = template['fullness'] || (this._maxFullness / 2);
-		// Number of points to subtract each turn
-		this._fullnessDepletionRate = template['fullnessDepletionRate'] || 1;
+		// For now, one weapon and one armor
+		this._weapon = null;
+		this._armor = null;
 	},
-	addTurnHunger: function(){
-		this.modifyFullnessBy(-this._fullnessDepletionRate);
-	},
-	modifyFullnessBy: function(points) {
-		this._fullness = this._fullness + points;
-		if (this._fullness <= 0) {
-			// TODO: Take damage equal to how negative your fullness is
-			// this.takeDamage(null, -this._fullness);
-			// For now, we'll do it the tutorial's way
-			this.kill();
-		} else if (this._fullness > this.maxFullness){
-			this.kill();
-		}
-	},
-	getHungerState: function(numeric = false) {
-		if (numeric) { return 'Hunger: ' + this._fullness; }
-		// This math looks weird, but it's right
-		let percent = this._maxFullness / 100;
-		if (this._fullness <= 5 * percent) { return 'Starving'; }
-		else if (this._fullness <= 25 * percent) { return 'Hungry'; }
-		else if (this._fullness >= 95 * percent) { return 'Oversatiated'; }
-		else if (this._fullness >= 75 * percent) { return 'Full'; }
-		else { return 'Not Hungry'; }
+	wield: function(item){ this._weapon = item;	},
+	unwield: function(){ this._weapon = null; },
+	wear: function(item){ this._armor = item; },
+	unwear: function(item){ this._armor = null; },
+	getWeapon: function() { return this._weapon; },
+	getArmor: function (){ return this._armor; },
+	unequip: function(item){
+		// Generic/helper function to call before getting rid of an item (dropping, destroying, etc.)
+		if (this._weapon === item) { this.unwield(); }
+		if (this._armor === item) { this.unwear(); }
 	}
 };
 
