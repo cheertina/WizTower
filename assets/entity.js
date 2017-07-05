@@ -7,6 +7,7 @@ Game.Entity = function(properties){
 	
 	// Instantiate Entity-only properties from the passed object
 	this._alive = true;
+	this._speed = properties['speed'] || 1000;
 	this._x = properties['x'] || 0;
 	this._y = properties['y'] || 0;
 	this._z = properties['z'] || 0;
@@ -93,12 +94,13 @@ Game.Entity.prototype.kill = function(message) {
 
 
 // Getters & Setters
-Game.Entity.prototype.getX    = function(){ return this._x; };
-Game.Entity.prototype.getY    = function(){ return this._y; };
-Game.Entity.prototype.getZ    = function(){ return this._z; };
-Game.Entity.prototype.isAlive = function(){ return this._alive; };
-Game.Entity.prototype.getMap  = function(){ return this._map; };
-Game.Entity.prototype.getPos  = function(){ 
+Game.Entity.prototype.getX     = function(){ return this._x; };
+Game.Entity.prototype.getY     = function(){ return this._y; };
+Game.Entity.prototype.getZ     = function(){ return this._z; };
+Game.Entity.prototype.getMap   = function(){ return this._map; };
+Game.Entity.prototype.isAlive  = function(){ return this._alive; };
+Game.Entity.prototype.getSpeed = function(){ return this._speed };
+Game.Entity.prototype.getPos   = function(){ 
 	return {
 		x: this._x,
 		y: this._y,
@@ -107,10 +109,11 @@ Game.Entity.prototype.getPos  = function(){
 	};
 };
 
-Game.Entity.prototype.setX    = function(x){ this._x = x; };
-Game.Entity.prototype.setY    = function(y){ this._y = y; };
-Game.Entity.prototype.setZ    = function(z){ this._z = z; };
-Game.Entity.prototype.setMap  = function(map){ this._map = map; };
+Game.Entity.prototype.setX        = function(x){ this._x = x; };
+Game.Entity.prototype.setY        = function(y){ this._y = y; };
+Game.Entity.prototype.setZ        = function(z){ this._z = z; };
+Game.Entity.prototype.setMap      = function(map){ this._map = map; };
+Game.Entity.prototype.setSpeed    = function(){ this._speed = speed; };
 Game.Entity.prototype.setPosition = function(x, y, z) {
 	let oldX = this._x;
 	let oldY = this._y;

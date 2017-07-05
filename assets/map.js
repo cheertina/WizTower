@@ -12,7 +12,7 @@ Game.Map = function(tiles, player){
 	this._items = {};
 	
 	// Create the engine and scheduler
-	this._scheduler = new ROT.Scheduler.Simple();
+	this._scheduler = new ROT.Scheduler.Speed();
 	this._engine = new ROT.Engine(this._scheduler);
 	
 	// Field of visions, one per floor
@@ -24,8 +24,9 @@ Game.Map = function(tiles, player){
 	this._setupExploredArray();
 	
 	// Add the player
+	this._player = player;	// So AI's can get it
 	this.addEntityAtRandomPosition(player, 0);
-	
+    
 	// And some random enemies and items
 	for (let z = 0; z < this._depth; z++){
 		for (let i = 0; i < 15; i++){
@@ -50,7 +51,7 @@ Game.Map.prototype.getWidth = function() { return this._width; };
 Game.Map.prototype.getHeight = function() { return this._height; };
 Game.Map.prototype.getEngine = function() { return this._engine; };
 Game.Map.prototype.getEntities = function() { return this._entities; };
-
+Game.Map.prototype.getPlayer = function() { return this._player; }
 
 // Tile/Location
 Game.Map.prototype.getTile = function (x, y, z) {

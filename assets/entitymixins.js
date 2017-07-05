@@ -83,6 +83,35 @@ Game.EntityMixins.Sight = { // Signifies that our entity posseses a field of vis
 	},
 	getSightRadius: function() {
 		return this._sightRadius;
+	},
+	canSee: function(entity) {
+		// If not on the same map and floor, no need to continue
+		if(!entity || this._map !== entity.getMap() || this._z !== entity.getZ()) {
+			return false;
+		}
+		
+		let targetX = entity.getX();
+		let targetY = entity.getY();
+		
+		
+		// If we're not within sight radius (pythagorean), no point
+		if ((targetX - this._x) * (targetX - this._x) +
+			(targetY - this._y) * (targetY - this._y) > 
+			(this._sightRadius * this._sightRadius)) {
+			return false;
+		}
+		
+		// Compute an actual FOV and check
+		let found = false;
+		this.getMap().getFov(this.getZ()).compute(
+			this.getX(), this.getY(),
+			this.getSightRadius(),
+			function(x, y, radius, visibility) {
+				if (x === targetX && y === targetY) {
+					found = true;
+				}
+			});
+		return found;
 	}
 };
 
@@ -298,10 +327,77 @@ Game.EntityMixins.FungusActor = {	// Fungus cannot move, but can spread
 	} //act()
 };
 
-Game.EntityMixins.WanderActor = {
-	name: 'WanderActor',
+Game.EntityMixins.TaskActor = {		// Perform task, or wander
+	name: 'TaskActor',
 	groupName: 'Actor',
+	init: function(template){
+		// Load tasks
+		this._tasks = template['tasks'] || ['wander'];
+	},
 	act: function(){
+		// Prioritize tasks until one can be acted on
+		for (let i = 0; i < this._tasks.length; i++){
+			if (this.canDoTask(this._tasks[i])){
+				// If we can perform task, do it and exit
+				this[this._tasks[i]]();
+				return;
+			}
+		}
+	},
+	canDoTask: function(task) {
+/*		switch(task){
+			case 'hunt':{ 
+				return this.hasMixin('Sight') && this.canSee(this.getMap().getPlayer());
+			}
+			case 'wander': { return true; }
+			default: throw new Error('No task ' + task + ' defined');
+		}
+*/		
+		if (task === 'hunt') {
+            return this.hasMixin('Sight') && this.canSee(this.getMap().getPlayer());
+        } else if (task === 'wander') {
+            return true;
+        } else {
+            throw new Error('Tried to perform undefined task ' + task);
+        }
+		
+	},
+	hunt: function() {
+		let player = this.getMap().getPlayer();
+		
+		// If we are adjacent to the player, attack
+		let offsets = Math.max(Math.abs(player.getX() - this.getX()), 
+			Math.abs(player.getY() - this.getY()));
+		if (offsets === 1) {
+			if (this.hasMixin('Attacker')) {
+				this.attack(player);
+				return;
+			}
+		}
+		
+		// Generate the path and move to the first tile
+		// Using ROT.js's A* pathfinder
+		let source = this;
+		let z = source.getZ();
+		let path = new ROT.Path.AStar(player.getX(), player.getY(), function(x, y) {
+			// if an entity is present at the tile, can't move there
+			let entity = source.getMap().getEntityAt(x,y,z);
+			if (entity && entity !== player && entity !== source){
+				return false;
+			}
+			return source.getMap().getTile(x,y,z).isWalkable();
+		}, {topology: 8});
+		// Once we have the path, move to the second cell passed in the callback
+		// The first one is our entity starting point
+		let count = 0;
+		path.compute(source.getX(), source.getY(), function(x,y) {
+			if (count == 1) {
+				source.tryMove(x,y,z);
+			}
+			count++;
+		});
+	},
+	wander: function(){
 		// Moves randomly
 		let dir = Math.floor(Math.random() * 8) + 1;
 		let newX = this.getX();
@@ -318,8 +414,7 @@ Game.EntityMixins.WanderActor = {
 		}
 		this.tryMove(newX, newY, this.getZ());
 	}
-};
-
+}
 
 // Helper functions
 Game.sendMessage = function(recipient, message, args) { // Send a message to an entity
