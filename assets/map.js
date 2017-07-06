@@ -30,7 +30,14 @@ Game.Map = function(tiles, player){
 	// And some random enemies and items
 	for (let z = 0; z < this._depth; z++){
 		for (let i = 0; i < 15; i++){
-			this.addEntityAtRandomPosition(Game.EntityRepository.createRandom(), z);
+			let entity = Game.EntityRepository.createRandom()
+			this.addEntityAtRandomPosition(entity, z);
+			// Level up entities on lower floors
+			if (entity.hasMixin('ExperienceGainer')) {
+				for (let level = 0; level < z; level++) {
+					entity.giveXp(entity.getNextLevelXp() - entity.getXp());
+				}
+			}
 		}
 		for (let i = 0; i < 10; i++){
 			this.addItemAtRandomPosition(Game.ItemRepository.createRandom(),z);

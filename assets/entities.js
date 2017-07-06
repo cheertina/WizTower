@@ -13,7 +13,6 @@ Game.PlayerTemplate = {
 	mixins: [
 		Game.EntityMixins.PlayerActor,
 		Game.EntityMixins.Sight,
-		Game.EntityMixins.Digger,
 		Game.EntityMixins.FoodConsumer,
 		Game.EntityMixins.PlayerStatGainer,
 		Game.EntityMixins.InventoryHolder,

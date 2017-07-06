@@ -37,25 +37,27 @@ Game.Screen.helpScreen = {
 	enter: function(){ console.log("Entered the help screen."); },
 	exit: function(){ console.log("Exited the help screen"); },
 	render: function(display){
-		// Render our prompt to the screen
 		display.drawText(1,1, "%c{yellow}Instructions");
 		display.drawText(1,3, "%c{white}Player control");
 		display.drawText(2,4, "Move with numpad");
-		display.drawText(2,5, "Press 0 to wait a round");
+		display.drawText(2,5, "Press 0 or 5 to wait a round");
 		display.drawText(1,7, "%c{white}Actions");
 		display.drawText(2,8, "E: Eat consumable");
 		display.drawText(2,9, "D: Drop item");
 		display.drawText(2,10, "I: View inventory");
-		display.drawText(2,11, "W: Weild/wear");
+		display.drawText(2,11, "W: Wield/wear");
 		display.drawText(2,12, ",: Pick up item");
 		display.drawText(1,14, "%c{white}Other");
-		display.drawText(2,15, "Select itme (Inventory screen)");	
-		display.drawText(1,24, "Press [Enter] to go to title.");
+		display.drawText(2,15, "Select item (Inventory screen)");	
+		display.drawText(1,24, "Press [Enter] to return");		
 	},
 	handleInput: function (inputType, inputData){
-		// When [Enter] is pressed, go to the play screen
+		// When [Enter] is pressed, go to the play screen if we haven't started the game
 		if (inputType === 'keydown') {
-			if (inputData.keyCode === ROT.VK_RETURN) {
+			if (Game._currentScreen._subScreen){
+				Game._currentScreen.setSubScreen(undefined);
+				Game.refresh();
+			} else if (inputData.keyCode === ROT.VK_RETURN) {
 				Game.switchScreen(Game.Screen.startScreen);
 			}
 		}
@@ -250,6 +252,20 @@ Game.Screen.playScreen = {
 				*  but you can't see that here, so grab a console.log, and good luck
 				*
 				*  Now with unnecessary (optional) braces, for nice folding */
+				
+				case ROT.VK_SLASH: {
+					if(inputData.shiftKey) {
+						this.setSubScreen(Game.Screen.helpScreen);
+						return;
+					}
+				}
+				
+				// TODO: Delete this - it's currently for testing the ability
+				// to add mixins after the entity has been created
+				case ROT.VK_N:{
+					this._player.addMixin(Game.EntityMixins.Digger); 
+					break; 
+				}
 				
 				case ROT.VK_E:{ // EAT COMESTIBLE
 					this.showItemsSubScreen(Game.Screen.eatScreen , this._player.getItems(), "You're not carrying anything to eat.");

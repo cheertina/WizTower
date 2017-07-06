@@ -44,6 +44,24 @@ Game.DynamicGlyph = function(properties){
 
 Game.DynamicGlyph.extend(Game.Glyph);
 
+Game.DynamicGlyph.prototype.addMixin = function(mix){
+	for (let key in mix){
+		if (key != 'init' && key != 'name' && !this.hasOwnProperty(key)) {
+			this[key] = mix[key];
+		}
+	}
+	// Add the name of this mixin to our attached mixins
+	this._attachedMixins[mix.name] = true;
+	// And add the mixin group name, too, if it exists
+	if(mix.groupName) {
+		this._attachedMixinGroups[mix.groupName] = true;
+	}
+	// Finally, call the init function if it exists
+	if(mix.init) {
+		mix.init.call(this, properties);
+	}
+}
+
 Game.DynamicGlyph.prototype.hasMixin = function(mix){
 	// Allow passing either the mixin itself or the name / group name as a string
 	if (typeof mix === 'object') {
