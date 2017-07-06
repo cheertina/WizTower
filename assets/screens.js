@@ -16,13 +16,47 @@ Game.Screen.startScreen = {
 	render: function(display){
 		// Render our prompt to the screen
 		display.drawText(1,1, "%c{yellow}Javascript Roguelike: Wizard's Tower");
-		display.drawText(1,2, "Press [Enter] to start!");
+		display.drawText(1,23, "Press [Enter] to start!");
+		display.drawText(1,24, "Press any other key for help.");
 	},
 	handleInput: function (inputType, inputData){
 		// When [Enter] is pressed, go to the play screen
 		if (inputType === 'keydown') {
 			if (inputData.keyCode === ROT.VK_RETURN) {
 				Game.switchScreen(Game.Screen.playScreen);
+			}
+			if (inputData.keyCode !== ROT.VK_RETURN) {
+				Game.switchScreen(Game.Screen.helpScreen);
+			}
+		}
+	}
+}
+
+// Define our initial start screen
+Game.Screen.helpScreen = {
+	enter: function(){ console.log("Entered the help screen."); },
+	exit: function(){ console.log("Exited the help screen"); },
+	render: function(display){
+		// Render our prompt to the screen
+		display.drawText(1,1, "%c{yellow}Instructions");
+		display.drawText(1,3, "%c{white}Player control");
+		display.drawText(2,4, "Move with numpad");
+		display.drawText(2,5, "Press 0 to wait a round");
+		display.drawText(1,7, "%c{white}Actions");
+		display.drawText(2,8, "E: Eat consumable");
+		display.drawText(2,9, "D: Drop item");
+		display.drawText(2,10, "I: View inventory");
+		display.drawText(2,11, "W: Weild/wear");
+		display.drawText(2,12, ",: Pick up item");
+		display.drawText(1,14, "%c{white}Other");
+		display.drawText(2,15, "Select itme (Inventory screen)");	
+		display.drawText(1,24, "Press [Enter] to go to title.");
+	},
+	handleInput: function (inputType, inputData){
+		// When [Enter] is pressed, go to the play screen
+		if (inputType === 'keydown') {
+			if (inputData.keyCode === ROT.VK_RETURN) {
+				Game.switchScreen(Game.Screen.startScreen);
 			}
 		}
 	}
