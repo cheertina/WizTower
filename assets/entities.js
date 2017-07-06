@@ -15,22 +15,26 @@ Game.PlayerTemplate = {
 		Game.EntityMixins.Sight,
 		Game.EntityMixins.Digger,
 		Game.EntityMixins.FoodConsumer,
+		Game.EntityMixins.PlayerStatGainer,
 		Game.EntityMixins.InventoryHolder,
 		Game.EntityMixins.MessageRecipient,
 		Game.EntityMixins.Equipper,
 		Game.EntityMixins.Attacker,
-		Game.EntityMixins.Destructible]
+		Game.EntityMixins.Destructible,
+		Game.EntityMixins.ExperienceGainer]
 }; // Player Template
 
 Game.EntityRepository = new Game.Repository('entities', Game.Entity);
 
 Game.EntityRepository.define('fungus', {
 	name: 'fungus',
+	team: 'neutral',
 	character: 'F',
 	foreground: 'lime',
 	speed: 250,
 	maxHp: 10,
-	mixins: [Game.EntityMixins.FungusActor, Game.EntityMixins.Destructible]
+	mixins: [Game.EntityMixins.FungusActor, Game.EntityMixins.Destructible,
+		Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer]
 }); // Fungus Template
 
 Game.EntityRepository.define('bat', {
@@ -44,7 +48,9 @@ Game.EntityRepository.define('bat', {
 		Game.EntityMixins.TaskActor,	// No tasks, so just wander
 		Game.EntityMixins.Attacker,
 		Game.EntityMixins.Destructible,
-		Game.EntityMixins.CorpseDropper]
+		Game.EntityMixins.CorpseDropper,
+		Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer
+		]
 }); // Bat Template
 
 Game.EntityRepository.define('newt', {
@@ -58,7 +64,9 @@ Game.EntityRepository.define('newt', {
 		Game.EntityMixins.TaskActor, 	// No tasks, so just wander
 		Game.EntityMixins.Attacker,
 		Game.EntityMixins.Destructible,
-		Game.EntityMixins.CorpseDropper]
+		Game.EntityMixins.CorpseDropper,
+		Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer
+		]
 });
 
 Game.EntityRepository.define('kobold', {
@@ -70,8 +78,9 @@ Game.EntityRepository.define('kobold', {
     sightRadius: 5,
     tasks: ['hunt', 'wander'],
     mixins: [Game.EntityMixins.TaskActor, Game.EntityMixins.Sight,
-             Game.EntityMixins.Attacker, Game.EntityMixins.Destructible,
-             Game.EntityMixins.CorpseDropper]
+            Game.EntityMixins.Attacker, Game.EntityMixins.Destructible,
+            Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer,
+			Game.EntityMixins.CorpseDropper]
 });
 
 

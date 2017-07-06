@@ -39,9 +39,6 @@ Game.Screen.playScreen = {
 	enter: function() {
 		console.log( "Entered playScreen." );
 		
-		// TODO for multi-screen
-		// Bail out here if already generated
-		
 		var map = [];
 		let width  = 80;
 		let height = 24;
@@ -169,6 +166,7 @@ Game.Screen.playScreen = {
 			messageY += display.drawText(0, messageY, '%c{white}%b{black}' + messages[i]);
 		}
 		
+		// STATUS RENDER
 		// Show hp, location, other stats TBD
 		let status = '%c{white}%b{black}';
 		status += vsprintf('HP: %d/%d   (%d, %d)',
@@ -176,9 +174,12 @@ Game.Screen.playScreen = {
 			this._player.getX(), this._player.getY()]);
 		display.drawText(0, screenHeight, status); // this hits row 1 of 2 blank at the bottom
 		// NOTE: screenHeight-1 is the last row of the playing field
+		
+		let stats2 = vsprintf('Level: %d, XP: %d', [this._player.getLevel(), this._player.getXp()]);
+		display.drawText(0, screenHeight+1, stats2);
 		// show hunger in row two, right side
 		let hungerState = this._player.getHungerState(true);	// use true for numeric debug. turn counting
-		display.drawText(screenWidth - hungerState.length, screenHeight+1, hungerState)
+		display.drawText(screenWidth - hungerState.length, screenHeight+1, hungerState);
 		
     }, //render()
 	
@@ -338,6 +339,48 @@ Game.Screen.loseScreen = {
         // Nothing to do here      
     }
 }
+
+// Level up stat gain screen
+Game.Screen.gainStatScreen = {
+	setup: function(entity) {
+		// Must be called before rendering
+		this._entity = entity;
+		this._options = entity.getStatOptions();
+	},
+	render: function(display){
+		let letters = 'abcdefghijklmnopqrstuvwxyz';
+		display.drawText(0, 0, 'Choose a stat to increase: ');
+		
+		// Iterate through available stats to improve
+		for (let i = 0; i < this._options.length; i++){
+			display.drawText(0, 2+i, letters.substring(i,i+1) + ' - ' + this._options[i][0]);
+		}
+		
+		// Display number of remaining points to distribute
+		display.drawText(0, 4 + this._options.length, "Remaining points: " + this._entity.getStatPoints());
+	},
+	handleInput: function(inputType, inputData) {
+		if (inputType === 'keydown') {
+			// If it's a letter, see if it's a valid options
+			if (inputData.keyCode >= ROT.VK_A && inputData.keyCode <= ROT.VK_Z){
+				// Subtract 'a' to map to an array index
+				let index = inputData.keyCode - ROT.VK_A;
+				if (this._options[index]) {
+					// Call the stat increasing function
+					this._options[index][1].call(this._entity);
+					// Decrement stat points to spend
+					this._entity.setStatPoints(this._entity.getStatPoints() - 1);
+					// If we have no stat points left, exit the screen.  If not, refresh
+					if (this._entity.getStatPoints() == 0) {
+						Game.Screen.playScreen.setSubScreen(undefined);
+					} else {
+						Game.refresh();
+					}
+				}
+			}
+		}
+	}
+};
 
 // An Item list based on template for different use cases
 // inventory list, pick up, drop, etc.
@@ -548,4 +591,7 @@ Game.Screen.wearScreen = new Game.Screen.ItemListScreen({
 		return true;
 	}
 });
+
+
+
 

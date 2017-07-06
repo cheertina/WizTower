@@ -29,6 +29,13 @@ Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 			
 			target.takeDamage(this, damage);
 		}
+	},
+	increaseAttackValue: function(value){
+		// If no value was passed, default to +2
+		value = value || 2;
+		// Add it to the current Attack VAlue
+		this._attackValue += value;
+		Game.sendMessage(this, "You feel stronger!");
 	}
 } // Attacker
 
@@ -55,11 +62,40 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 		// If hp drops to 0 or less, remove ourselves from the map via Game.Entity.kill()
 		if (this._hp <= 0){
 			Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
+			// Drop a corpse, if necessary
+			if (this.hasMixin(Game.EntityMixins.CorpseDropper)) {
+				this.tryDropCorpse();
+			}
+            this.kill();
+			if(attacker.hasMixin('ExperienceGainer')){
+				let exp = this.getMaxHp() + this.getDefenseValue();
+				if (this.hasMixin('Attacker')) { exp += this.getAttackValue(); }
+				if (this.hasMixin('ExperienceGainer')) { exp -= (attacker.getLevel() - this.getLevel()) * 3;}
+				if (exp > 0) { attacker.giveXp(exp); }
+			}
+		}
+	},
+	heal: function(healVal){  // healVal can be negative for non-attack damage (starving, poison, etc.)
+		healVal = healVal || 1;
+		this._hp = Math.min(this._hp + healVal, this._maxHp);
+		if (this._hp <= 0){
+			Game.sendMessage(this, 'You died!');
 			if (this.hasMixin(Game.EntityMixins.CorpseDropper)) {
 				this.tryDropCorpse();
 			}
             this.kill();
 		}
+	},
+	increaseDefenseValue: function(value){
+		value = value || 2;
+		this._defenseValue += value;
+		Game.sendMessage(this, "You feel tougher!");
+	},
+	increaseMaxHp: function(value) {
+		value = value || 10;
+		this._maxHp += value;
+		this.heal(value);
+		Game.sendMessage(this, "You feel healthier!");
 	}
 }; //Destructible
 
@@ -112,9 +148,13 @@ Game.EntityMixins.Sight = { // Signifies that our entity posseses a field of vis
 				}
 			});
 		return found;
+	},
+	increaseSightRadius: function(value){
+		value = value || 1;
+		this._sightRadius += value;
+		Game.sendMessage(this, "You become more aware of your surroundings!")
 	}
 };
-
 
 Game.EntityMixins.FoodConsumer = { // Entity can/must eat
 	name: 'FoodConsumer',
@@ -131,10 +171,9 @@ Game.EntityMixins.FoodConsumer = { // Entity can/must eat
 	modifyFullnessBy: function(points) {
 		this._fullness = this._fullness + points;
 		if (this._fullness <= 0) {
-			// TODO: Take damage equal to how negative your fullness is
-			// this.takeDamage(null, -this._fullness);
-			// For now, we'll do it the tutorial's way
-			this.kill();
+			// Take damage equal to how negative your fullness is
+			this.heal(this._fullness);
+			Game.sendMessage(this, "You are starving!");
 		} else if (this._fullness > this.maxFullness){
 			this.kill();
 		}
@@ -168,6 +207,79 @@ Game.EntityMixins.CorpseDropper = { // Entity can drop a corpse when killed
 		}
 	}
 }
+
+// XP, Levels, and Stats
+Game.EntityMixins.ExperienceGainer = {
+	name: 'ExperienceGainer',
+	init: function(template){
+		this._level = template['level'] || 1;
+		this._xp = template['xp'] || 0;
+		this._statPointsPerLevel = template['statPointsPerLevel'] || 1;
+		this._statPoints = 0;
+		// Determine what stats can be leveled up
+		this._statOptions = [];
+		if (this.hasMixin('Attacker')) {
+			this._statOptions.push(['Increase attack value', this.increaseAttackValue]); 
+		}
+		if (this.hasMixin('Destructible')) { 
+			this._statOptions.push(['Increase defense value', this.increaseDefenseValue]);
+			this._statOptions.push(['Increase maximum health', this.increaseMaxHp]); 
+		}
+		if (this.hasMixin('Sight')) {
+			this._statOptions.push(['Increase sight radius', this.increaseSightRadius]);
+		}
+	},
+	getLevel: function(){ return this._level; },
+	getXp: function(){ return this._xp; },
+	getNextLevelXp: function(){ return 10 * (this._level * this._level); },		//10, 40, 90, 160...
+	getStatPoints: function(){ return this._statPoints; },
+	setStatPoints: function(value) { this._statPoints = value; },
+	getStatOptions: function() { return this._statOptions; },
+	giveXp: function(points) {
+		let statPointsGained = 0;
+		let levelsGained = false;
+		
+		this._xp += points;
+		while (this._xp > this.getNextLevelXp()){
+			this._xp -= this.getNextLevelXp();
+			this._level++;
+			levelsGained = true;
+			this._statPoints += this._statPointsPerLevel;
+			statPointsGained += this._statPointsPerLevel;
+		}
+		// If we gained any levels
+		if(levelsGained) {
+			Game.sendMessage(this, "You advance to level %d.", [this._level]);
+			// Heal the entity, if possible
+			if (this.hasMixin('Destructible')) { this.heal(this._maxHp); }
+			if (this.hasMixin('StatGainer')) {
+				this.onGainLevel();
+			}
+		}
+	}
+};
+
+Game.EntityMixins.RandomStatGainer = {
+	name: 'RandomStatGainer',
+	groupName: 'StatGainer',
+	onGainLevel: function(){
+		let statOptions = this.getStatOptions();
+		while (this.getStatPoints() > 0){
+			statOptions.random()[1].call(this);
+			this.setStatPoints(this.getStatPoints() - 1);
+		}
+	}
+};
+
+Game.EntityMixins.PlayerStatGainer = {
+	name: 'PlayerStatGainer',
+	groupName: 'StatGainer',
+	onGainLevel: function(){
+		Game.Screen.gainStatScreen.setup(this);
+		Game.Screen.playScreen.setSubScreen(Game.Screen.gainStatScreen);
+	}
+};
+
 
 // Item-related
 Game.EntityMixins.InventoryHolder = { // Entity can pickup/drop/carry items
@@ -344,22 +456,16 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 			}
 		}
 	},
+	// TODO: Allow hunt to also track/kill neutral creeps like fungus
 	canDoTask: function(task) {
-/*		switch(task){
+		switch(task){
 			case 'hunt':{ 
 				return this.hasMixin('Sight') && this.canSee(this.getMap().getPlayer());
 			}
 			case 'wander': { return true; }
 			default: throw new Error('No task ' + task + ' defined');
 		}
-*/		
-		if (task === 'hunt') {
-            return this.hasMixin('Sight') && this.canSee(this.getMap().getPlayer());
-        } else if (task === 'wander') {
-            return true;
-        } else {
-            throw new Error('Tried to perform undefined task ' + task);
-        }
+
 		
 	},
 	hunt: function() {
