@@ -260,11 +260,16 @@ Game.Screen.playScreen = {
 					}
 				}
 				
-				// TODO: Delete this - it's currently for testing the ability
+				// TODO: Delete these - it's currently for testing the ability
 				// to add mixins after the entity has been created
 				case ROT.VK_N:{
 					this._player.addMixin(Game.EntityMixins.Digger); 
-					break; 
+					return; 
+				}
+				
+				case ROT.VK_M:{
+					this._player.removeMixin(Game.EntityMixins.Digger);
+					return;
 				}
 				
 				case ROT.VK_E:{ // EAT COMESTIBLE

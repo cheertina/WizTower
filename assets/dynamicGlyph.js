@@ -62,6 +62,32 @@ Game.DynamicGlyph.prototype.addMixin = function(mix){
 	}
 }
 
+Game.DynamicGlyph.prototype.removeMixin = function(mix){
+	for (let key in mix){
+		if (key != 'init' && key != 'name' && this.hasOwnProperty(key)) {
+			delete this[key];
+		}
+		delete this._attachedMixins[mix.name];
+		
+		// IF this is the last mixin of a group, delete the group
+		// note we already deleted this specific mixin, so just check the rest
+		let groupFlag = false;
+		for (let groupKey in this._attachedMixins){
+			if (this._attachedMixins[groupKey].groupName = mix.groupName){
+				groupFlag = true;
+				break;
+			}
+		}
+		if (groupFlag) {
+			delete this._attachedMixinGroups[mix.groupName];
+		}
+		
+		if(mix.onRemove){
+			mix.onRemove.call(this);
+		}
+	}
+}
+
 Game.DynamicGlyph.prototype.hasMixin = function(mix){
 	// Allow passing either the mixin itself or the name / group name as a string
 	if (typeof mix === 'object') {
