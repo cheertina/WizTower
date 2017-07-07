@@ -100,6 +100,56 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 	}
 }; //Destructible
 
+Game.EntityMixins.Spawner = { // Entity can create entities of the same or different type
+	name: 'Spawner',
+	init: function(template){
+		// _spawns is an array of entity template _name strings_
+		// should probably refactor into an object with options and chances, to allow non-equal spreads of 
+		// spawn types
+		this._spawns = template['spawns'] || [template['name']];	// Default to self-replication, fungus-style
+		this._spawnsLeft = template['maxSpawns'] || -1;	//-1 for unlimited
+	},
+	spawn: function(){
+		if(this._spawnsLeft == 0){ return; }  // No spawns left, bail out
+		
+		// Generate a random dX and dY of -1, 0, or 1
+		let xOffset = 0;
+		let yOffset = 0;
+		while (xOffset == 0 && yOffset == 0){	// Generate random offsets until we're not hitting our starting location
+			xOffset = Math.floor(Math.random() * 3) - 1;
+			yOffset = Math.floor(Math.random() * 3) - 1;
+		}
+		
+		target = {x: this.getX() + xOffset,
+				  y: this.getY() + yOffset,
+				  z: this.getZ()
+		}
+		// Select a creature to spawn at random from the list of availabe spawn types
+		// Rework this to allow possibly non-uniform distributions
+		let rngSpawn = Math.floor(Math.random() * this._spawns.length);
+		let newSpawn = this._spawns[rngSpawn];
+		
+		// For now, attempting to create a spawn on a non-empty square just fails (but doesn't cost a spawn)
+		// Create the spawned creature and put it on the floor at the offset location if it's empty
+		if (this.getMap().isEmptyFloor(target.x, target.y, target.z)){
+			let entity = Game.EntityRepository.create(newSpawn);
+			entity.setPosition(target.x, target.y, target.z);
+			this.getMap().addEntity(entity);
+			this._growthsRemaining--;
+			
+			// Send a message to nearby entities
+			Game.sendMessageNearby(this.getMap(),
+				entity.getX(), entity.getY(), entity.getZ(),
+				'A new ' + newSpawn + ' has spawned!');
+				
+			if (this._spawnsLeft > 0){	// If it hits zero, we stop spawning.  If it's negative to start
+				this._spawnsLeft--;		// we just keep going forever.
+			}
+		}
+	
+	}
+};
+
 Game.EntityMixins.MessageRecipient = { // Entity is able to receive messages - see helpers
 	name: 'MessageRecipient',
 	init: function(template){ this._messages = []; },
@@ -427,40 +477,36 @@ Game.EntityMixins.PlayerActor = {
 	}
 };
 
-Game.EntityMixins.FungusActor = {	// Fungus cannot move, but can spread
-	name: 'FungusActor',
+
+
+Game.EntityMixins.TurnSpawnActor = {
+	name: 'TurnSpawnActor',
 	groupName: 'Actor',
-	init: function(){ 
-		this._growthsRemaining = 5; 
+	init: function(template)	{
+		this._spawnRate = template['spawnRate'] || 10;	// Turns between spawns
+		this._turnCounter = 0;
 	},
 	act: function(){
-		if(this._growthsRemaining > 0){
-			if(Math.random() <= .02){ // 2% chance to spread
-				// Generate a random dX and dY of -1, 0, or 1
-				let xOffset = Math.floor(Math.random() * 3) - 1;
-				let yOffset = Math.floor(Math.random() * 3) - 1;
-				// Don't spread to the space we're on, add an extra growthRemaining instead
-				if (xOffset != 0 || yOffset != 0){
-					// Can only spread to empty tiles
-					target = {x: this.getX() + xOffset,
-							  y: this.getY() + yOffset,
-							  z: this.getZ()
-					}
-					if (this.getMap().isEmptyFloor(target.x, target.y, target.z)){
-						let entity = Game.EntityRepository.create('fungus');
-						entity.setPosition(target.x, target.y, target.z);
-						this.getMap().addEntity(entity);
-						this._growthsRemaining--;
-						
-						// Send a message to nearby entities
-						Game.sendMessageNearby(this.getMap(),
-							entity.getX(), entity.getY(), entity.getZ(),
-							'The fungus is spreading!');
-					}
-				} else {
-					this._growthsRemaining++;
-				}
-			}
+		if (this._spawnRate < 1) this._spawnRate = 1;	// In case we ever let this change and get below 1 somehow
+		if (this._turnCounter == this._spawnRate){
+			this.spawn();
+			
+		}
+		this._turnCounter++;
+		while (this._turnCounter > this._spawnRate){ this._turnCounter -= this._spawnRate; }
+	}
+	
+}
+
+Game.EntityMixins.RngSpawnActor = {	// For rng-based spawn rate
+	name: 'RngSpawnActor',
+	groupName: 'Actor',
+	init: function(template){ 
+		this._spawnChance = template['spawnChance'] || .02
+	},
+	act: function(){
+		if(Math.random() <= this._spawnChance){ // 2% chance to spread
+			this.spawn();
 		}
 	} //act()
 };

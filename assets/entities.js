@@ -25,15 +25,18 @@ Game.PlayerTemplate = {
 
 Game.EntityRepository = new Game.Repository('entities', Game.Entity);
 
+// Basic creatures
 Game.EntityRepository.define('fungus', {
 	name: 'fungus',
 	team: 'neutral',
 	character: 'F',
 	foreground: 'lime',
+	spawns: ['fungus'],
+	spawnChance: .52,
+	maxSpawns: 5,
 	speed: 250,
 	maxHp: 10,
-	mixins: [Game.EntityMixins.FungusActor, Game.EntityMixins.Destructible,
-		Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer]
+	mixins: [Game.EntityMixins.Spawner, Game.EntityMixins.RngSpawnActor, Game.EntityMixins.Destructible]
 }); // Fungus Template
 
 Game.EntityRepository.define('bat', {
@@ -84,4 +87,20 @@ Game.EntityRepository.define('kobold', {
 			Game.EntityMixins.CorpseDropper]
 }, { disableRandomCreation: true });
 
+// Nests
+Game.EntityRepository.define('newtNest', {
+	name: 'nest',
+	character: '&',
+	foreground: 'brown',
+	maxHp: 200,
+	speed: 1000,
+	spawnRate: 10,
+	maxSpawns: -1,
+	spawns: ['newt'],
+	mixins: [
+		Game.EntityMixins.Spawner,
+		Game.EntityMixins.TurnSpawnActor,
+		Game.EntityMixins.Destructible]
+}, { disableRandomCreation: true });
 
+	

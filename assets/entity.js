@@ -98,6 +98,7 @@ Game.Entity.prototype.getX     = function(){ return this._x; };
 Game.Entity.prototype.getY     = function(){ return this._y; };
 Game.Entity.prototype.getZ     = function(){ return this._z; };
 Game.Entity.prototype.getMap   = function(){ return this._map; };
+Game.Entity.prototype.getTeam  = function() {return this._team; }
 Game.Entity.prototype.isAlive  = function(){ return this._alive; };
 Game.Entity.prototype.getSpeed = function(){ return this._speed };
 Game.Entity.prototype.getPos   = function(){ 
@@ -113,6 +114,7 @@ Game.Entity.prototype.setX        = function(x){ this._x = x; };
 Game.Entity.prototype.setY        = function(y){ this._y = y; };
 Game.Entity.prototype.setZ        = function(z){ this._z = z; };
 Game.Entity.prototype.setMap      = function(map){ this._map = map; };
+Game.Entity.prototype.setTeam	  = function(team){ this._team = team; };
 Game.Entity.prototype.setSpeed    = function(){ this._speed = speed; };
 Game.Entity.prototype.setPosition = function(x, y, z) {
 	let oldX = this._x;

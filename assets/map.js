@@ -27,10 +27,14 @@ Game.Map = function(tiles, player){
 	this._player = player;	// So AI's can get it
 	this.addEntityAtRandomPosition(player, 0);
     
+	// Put a newt spawner on the first floor, just for testing
+	this.addEntityAtRandomPosition(Game.EntityRepository.create('newtNest'), 0);
+	
 	// And some random enemies and items
-	this.addEntityAtRandomPosition(Game.EntityRepository.create('kobold'), 0);
 	for (let z = 0; z < this._depth; z++){
+		this.addEntityAtRandomPosition(Game.EntityRepository.create('kobold'), z);
 		for (let i = 0; i < 15; i++){
+			
 			let entity = Game.EntityRepository.createRandom()
 			this.addEntityAtRandomPosition(entity, z);
 			// Level up entities on lower floors
