@@ -62,6 +62,7 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 		// If hp drops to 0 or less, remove ourselves from the map via Game.Entity.kill()
 		if (this._hp <= 0){
 			Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
+			console.log(attacker.getName() + " kills " + this.getName());
 			// Drop a corpse, if necessary
 			if (this.hasMixin(Game.EntityMixins.CorpseDropper)) {
 				this.tryDropCorpse();
@@ -473,26 +474,30 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 	},
 	act: function(){
 		// Prioritize tasks until one can be acted on
+		// We factored out the pre-test.  Now we attempt the action and return false
+		// if it is impossible - no targets in range, whatever.  Keep trying in order until something succeeds
+		// Wander will always return true;
 		for (let i = 0; i < this._tasks.length; i++){
-			if (this.canDoTask(this._tasks[i])){
-				// If we can perform task, do it and exit
-				this[this._tasks[i]]();
-				return;
-			}
+			let success = this[this._tasks[i]]();
+			if (success) { return; }
 		}
 	},
-	// TODO: Allow hunt to also track/kill neutral creeps like fungus
-	canDoTask: function(task) {
-		switch(task){
-			case 'hunt':{ 
-				return this.hasMixin('Sight') && this.canSee(this.getMap().getPlayer());
+	/*	DEPRECATED
+	TODO: Delete
+	canDoTask: function(task) {	
+		if (task == 'hunt'){
+			return this.hasMixin('Sight') && this.canSee(this.getMap().getPlayer());
+		}
+			case 'hunt2':{ 
+				return this.hasMixin('Sight')
 			}
 			case 'wander': { return true; }
 			default: throw new Error('No task ' + task + ' defined');
 		}
-
-		
 	},
+	
+	TODO: Delete
+	
 	hunt: function() {
 		let player = this.getMap().getPlayer();
 		
@@ -528,6 +533,72 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 			count++;
 		});
 	},
+	*/
+	hunt: function(priorities){
+		// Set up defaults, if necessary
+		priorities = priorities || {high: ['player'], low: ['neutral']}
+		
+		// Prepare empty lists to fill with targets
+		let targets = [];
+		let subTargets = []
+		let target = null;
+		
+		// Simplify calls and make sure we don't lose context
+		let map = this.getMap();
+		let myLoc = this.getPos();
+		
+		map.getFov(myLoc.z).compute(myLoc.x, myLoc.y, this.getSightRadius(),
+			function(x, y, radius, visibility) { // Callback function, called on each visible (x,y) pair in radius
+				let chk = map.getEntityAt(x, y, myLoc.z)
+				if(chk && (x !== myLoc.x || y !== myLoc.y)){ // if there's a creature and it's not the one searching
+					// See if this entities team is on the high priority list
+					for (var prioIndex = 0; prioIndex < priorities.high.length; prioIndex++){
+						if(chk.getTeam() == priorities.high[prioIndex]) { 
+							targets.push(chk.getPos());
+						}
+					}
+					// See if it's on the low priority list
+					for (prioIndex = 0; prioIndex < priorities.low.length; prioIndex++){
+						if(chk.getTeam() == priorities.low[prioIndex]) { 
+							subTargets.push(chk.getPos());
+						}
+					}					
+				}
+		});
+		// So now we should have 2 lists of positions in visual radius with targets
+		
+		
+		if (targets.length) { target = map.getEntityAt(targets[0]); }
+		else if (subTargets.length) { target = map.getEntityAt(subTargets[0]); }
+		
+		if(target) console.log("Found (sub)target: " + target.getName());
+		else return false;	// No target found, move on to next priority action
+		
+		// Generate the path and move to the first tile
+		// Using ROT.js's A* pathfinder
+		let source = this;
+		let z = source.getZ();
+		let path = new ROT.Path.AStar(target.getX(), target.getY(), function(x, y) {
+			// if an entity is present at the tile, can't move there
+			let entity = source.getMap().getEntityAt(x,y,z);
+			if (entity && entity !== target && entity !== source){
+				return false;
+			}
+			return source.getMap().getTile(x,y,z).isWalkable();
+		}, {topology: 8});
+		// Once we have the path, move to the second cell passed in the callback
+		// The first one is our entity starting point
+		let count = 0;
+		path.compute(source.getX(), source.getY(), function(x,y) {
+			if (count == 1) {
+				source.tryMove(x,y,z);
+			}
+			count++;
+		});
+		return true;
+		
+	},
+	
 	wander: function(){
 		// Moves randomly
 		let dir = Math.floor(Math.random() * 8) + 1;
@@ -544,6 +615,7 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 			case 8: newX +=  1; newY += -1; break;
 		}
 		this.tryMove(newX, newY, this.getZ());
+		return true;
 	}
 }
 

@@ -28,6 +28,7 @@ Game.Map = function(tiles, player){
 	this.addEntityAtRandomPosition(player, 0);
     
 	// And some random enemies and items
+	this.addEntityAtRandomPosition(Game.EntityRepository.create('kobold'), 0);
 	for (let z = 0; z < this._depth; z++){
 		for (let i = 0; i < 15; i++){
 			let entity = Game.EntityRepository.createRandom()
@@ -131,7 +132,9 @@ Game.Map.prototype.addItemAtRandomPosition = function(item, z){
 
 // Entity-related
 Game.Map.prototype.getEntityAt = function(x, y, z){
-	return this._entities[x + ',' + y + ',' + z];
+	if(typeof x === 'object') { return this._entities[x.str]; }	// Almost as good as overloading
+	var out = this._entities[x + ',' + y + ',' + z];
+	return out;
 }; // getEntityAt
 
 Game.Map.prototype.getEntitiesWithinRadius = function(centerX, centerY, centerZ, radius){
@@ -221,6 +224,9 @@ Game.Map.prototype.setupFov = function(){
 	// Iterate through each depth level, seting up the FoV
 	for (let z = 0; z < this._depth; z++){
 		let depth = z;
+		
+		// For each depth we create a callback that is used to determine if light can pass through a tile
+		// We use a simple yes/no function
 		map._fov.push(new ROT.FOV.DiscreteShadowcasting(function(x,y) {
 			return !map.getTile(x, y, depth).isBlockingLight();}, {topology:8}));
 	}

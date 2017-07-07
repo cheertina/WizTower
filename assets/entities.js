@@ -39,6 +39,7 @@ Game.EntityRepository.define('fungus', {
 Game.EntityRepository.define('bat', {
 	name: 'bat',
 	character: 'B',
+	team: 'monster',	// Kobolds ignore monsters, fight neutrals
 	foreground: 'white',
 	speed: 2000,
 	maxHp: 5,
@@ -55,6 +56,7 @@ Game.EntityRepository.define('bat', {
 Game.EntityRepository.define('newt', {
     name: 'newt',
     character: ':',
+	team: 'neutral',
     foreground: 'yellow',
     speed: 1000,
 	maxHp: 3,
@@ -80,6 +82,6 @@ Game.EntityRepository.define('kobold', {
             Game.EntityMixins.Attacker, Game.EntityMixins.Destructible,
             Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer,
 			Game.EntityMixins.CorpseDropper]
-});
+}, { disableRandomCreation: true });
 
 
