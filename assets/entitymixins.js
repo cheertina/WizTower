@@ -527,58 +527,6 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 			if (success) { return; }
 		}
 	},
-	/*	DEPRECATED
-	TODO: Delete
-	canDoTask: function(task) {	
-		if (task == 'hunt'){
-			return this.hasMixin('Sight') && this.canSee(this.getMap().getPlayer());
-		}
-			case 'hunt2':{ 
-				return this.hasMixin('Sight')
-			}
-			case 'wander': { return true; }
-			default: throw new Error('No task ' + task + ' defined');
-		}
-	},
-	
-	TODO: Delete
-	
-	hunt: function() {
-		let player = this.getMap().getPlayer();
-		
-		// If we are adjacent to the player, attack
-		let offsets = Math.max(Math.abs(player.getX() - this.getX()), 
-			Math.abs(player.getY() - this.getY()));
-		if (offsets === 1) {
-			if (this.hasMixin('Attacker')) {
-				this.attack(player);
-				return;
-			}
-		}
-		
-		// Generate the path and move to the first tile
-		// Using ROT.js's A* pathfinder
-		let source = this;
-		let z = source.getZ();
-		let path = new ROT.Path.AStar(player.getX(), player.getY(), function(x, y) {
-			// if an entity is present at the tile, can't move there
-			let entity = source.getMap().getEntityAt(x,y,z);
-			if (entity && entity !== player && entity !== source){
-				return false;
-			}
-			return source.getMap().getTile(x,y,z).isWalkable();
-		}, {topology: 8});
-		// Once we have the path, move to the second cell passed in the callback
-		// The first one is our entity starting point
-		let count = 0;
-		path.compute(source.getX(), source.getY(), function(x,y) {
-			if (count == 1) {
-				source.tryMove(x,y,z);
-			}
-			count++;
-		});
-	},
-	*/
 	hunt: function(priorities){
 		// Set up defaults, if necessary
 		priorities = priorities || {high: ['player'], low: ['neutral']}
