@@ -5,6 +5,7 @@ Game.Tile = function(properties){
 	properties = properties || {};
 	// Call the Glyph constructor with our properties
 	Game.Glyph.call(this, properties);
+	this._name = properties['name'] || '';
 	this._walkable = properties['walkable'] || false;
 	this._diggable = properties['diggable'] || false;
 	this._blocksLight = properties['blocksLight'] !== undefined ? properties['blocksLight'] : true;
@@ -38,12 +39,14 @@ Game.getNeighborPositions = function(x, y) {
 Game.Tile.nullTile  = new Game.Tile();
 
 Game.Tile.floorTile = new Game.Tile({
+	name: 'floor',
 	character: '.',
 	walkable: true,
 	blocksLight: false
 });
 
 Game.Tile.wallTile  = new Game.Tile({
+	name: 'wall',
 	character: '#',
 	foreground: 'goldenrod',
 	diggable: true,
@@ -51,6 +54,7 @@ Game.Tile.wallTile  = new Game.Tile({
 });
 
 Game.Tile.stairsUpTile = new Game.Tile({
+	name: 'stairs up',
 	character: '<',
 	foreground: 'white',
 	walkable: true,
@@ -58,6 +62,7 @@ Game.Tile.stairsUpTile = new Game.Tile({
 });
 
 Game.Tile.stairsDownTile = new Game.Tile({
+	name: 'stairs down',
 	character: '>',
 	foreground: 'white',
 	walkable: true,

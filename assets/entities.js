@@ -32,7 +32,7 @@ Game.EntityRepository.define('fungus', {
 	character: 'F',
 	foreground: 'lime',
 	spawns: ['fungus'],
-	spawnChance: .52,
+	spawnChance: .02,
 	maxSpawns: 5,
 	speed: 250,
 	maxHp: 10,

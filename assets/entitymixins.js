@@ -106,7 +106,7 @@ Game.EntityMixins.Spawner = { // Entity can create entities of the same or diffe
 		// _spawns is an array of entity template _name strings_
 		// should probably refactor into an object with options and chances, to allow non-equal spreads of 
 		// spawn types
-		this._spawns = template['spawns'] || [template['name']];	// Default to self-replication, fungus-style
+		this._spawns = template['spawns'] || [template['name', 1]];	// Default to self-replication, fungus-style
 		this._spawnsLeft = template['maxSpawns'] || -1;	//-1 for unlimited
 	},
 	spawn: function(){
@@ -125,7 +125,8 @@ Game.EntityMixins.Spawner = { // Entity can create entities of the same or diffe
 				  z: this.getZ()
 		}
 		// Select a creature to spawn at random from the list of availabe spawn types
-		// Rework this to allow possibly non-uniform distributions
+		// TODO: Rework this to allow possibly non-uniform distributions?
+		// Fake it with multiple entries in the array ([a,a,a,b] for 75/25)
 		let rngSpawn = Math.floor(Math.random() * this._spawns.length);
 		let newSpawn = this._spawns[rngSpawn];
 		
@@ -476,8 +477,6 @@ Game.EntityMixins.PlayerActor = {
 		this._acting = false;
 	}
 };
-
-
 
 Game.EntityMixins.TurnSpawnActor = {
 	name: 'TurnSpawnActor',

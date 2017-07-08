@@ -105,7 +105,8 @@ Game.Map.prototype.isEmptyFloor = function(x, y, z){
 
 // Items
 Game.Map.prototype.getItemsAt = function(x, y, z){
-	return this._items[x + ',' + y + ',' + z];
+	if (typeof x === 'string') { return this._items[x]; }	// call with a position string
+	else { return this._items[x + ',' + y + ',' + z]; }
 }
 
 Game.Map.prototype.setItemsAt = function(x, y, z, items){

@@ -42,13 +42,14 @@ Game.Screen.helpScreen = {
 		display.drawText(2,4, "Move with numpad");
 		display.drawText(2,5, "Press 0 or 5 to wait a round");
 		display.drawText(1,7, "%c{white}Actions");
-		display.drawText(2,8, "E: Eat consumable");
-		display.drawText(2,9, "D: Drop item");
+		display.drawText(2,8, "D: Drop item");
+		display.drawText(2,9, "E: Eat consumable");
 		display.drawText(2,10, "I: View inventory");
-		display.drawText(2,11, "W: Wield/wear");
-		display.drawText(2,12, ",: Pick up item");
-		display.drawText(1,14, "%c{white}Other");
-		display.drawText(2,15, "Select item (Inventory screen)");	
+		display.drawText(2,11, "L: Enter/Exit 'Look' mode");
+		display.drawText(2,12, "W: Wield/wear");
+		display.drawText(2,13, ",: Pick up item");
+		display.drawText(1,15, "%c{white}Other");
+		display.drawText(2,16, "Select item (Inventory screen)");	
 		display.drawText(1,24, "Press [Enter] to return");		
 	},
 	handleInput: function (inputType, inputData){
@@ -70,7 +71,10 @@ Game.Screen.playScreen = {
     _player: null,
 	_gameEnded: false,
 	_subScreen: null,
-	_turns: 0,
+	
+	// For looking around, mode='look'
+	_cursor: {},
+	_mode: 'play',
 	
 	enter: function() {
 		console.log( "Entered playScreen." );
@@ -102,19 +106,28 @@ Game.Screen.playScreen = {
 		}
 		let screenWidth = Game.getScreenWidth();
 		let screenHeight = Game.getScreenHeight();
-
+		
+		let screenCenter = {x: this._player.getX(), y: this._player.getY()}
+		if(this._mode == 'look') {
+			screenCenter.x = this._cursor.x;
+			screenCenter.y = this._cursor.y;
+		} else {
+			this._cursor.x = this._player.getX();
+			this._cursor.y = this._player.getY();
+		}
 		
 		// make sure our viewport doesn't try to scroll off the map to the left
 		// and don't scroll so far to the right that you don't have a full screen to display
-		let topLeftX = Math.max(0, this._player.getX() - (screenWidth / 2));
+		let topLeftX = Math.max(0, screenCenter.x - (screenWidth / 2));
 		topLeftX = Math.min(topLeftX, this._map.getWidth() - screenWidth);
 		
-		let topLeftY = Math.max(0, this._player.getY() - (screenHeight / 2));
+		let topLeftY = Math.max(0, screenCenter.y - (screenHeight / 2));
 		topLeftY = Math.min(topLeftY, this._map.getHeight() - screenHeight);
 
 		
 		// This will keep track of our visible cells
 		var visibleCells = {};
+		var cursorIsVisible = false;
 		// Don't lose these values during callbacks
 		var currentDepth = this._player.getZ();
 		var map = this._map;
@@ -136,7 +149,7 @@ Game.Screen.playScreen = {
 			for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
 				// Render all tiles that have ever been seen
 				if(map.isExplored(x, y, currentDepth)){
-					//Fetch the glyph for the tile 
+					// Fetch the glyph for the tile 
 					let glyph = this._map.getTile(x, y, currentDepth);
 					let foreground = glyph.getForeground();
 					
@@ -163,38 +176,27 @@ Game.Screen.playScreen = {
 						// Cell is not currently visible, but has been seen before
 						foreground = 'dimGray';
 					}
+					// See if we need to render the cursor, too
+					// box the character we want to show, just in case
+					// The draw function handles arrays by combining the characters
+					let dispChar = [glyph.getChar()];
+					if (this._mode == 'look' && this._cursor.x == x && this._cursor.y == y){
+						dispChar.push('_');
+						cursorIsVisible = true;
+					}
 					
 					//call the draw function and actually render it
 					display.draw(
 						x - topLeftX,
 						y - topLeftY,
-						glyph.getChar(),
+						dispChar,
 						foreground,
 						glyph.getBackground()
 					);
 				}
 			}
 		}
-		// Render the entities
-		var entities = this._map.getEntities();
-		for (var key in entities){
-			let entity = entities[key];
-			//only render it if it actually fits in the viewport
-			if (visibleCells[entity.getX() + ',' + entity.getY()] && //make sure it's visible first
-				entity.getX() >= topLeftX &&	// then check the rest of the conditions
-				entity.getY() >= topLeftY &&	// since it's more likely to be unseen than offscreen
-                entity.getX() < topLeftX + screenWidth &&	// because our vision radius is smaller
-                entity.getY() < topLeftY + screenHeight &&	// than the size of the screen
-				entity.getZ() == this._player.getZ()) {		// Duh.
-                display.draw(
-                    entity.getX() - topLeftX, 
-                    entity.getY() - topLeftY,
-                    entity.getChar(), 
-                    entity.getForeground(), 
-                    entity.getBackground()
-                );
-            }
-		}
+		
 		// Get and render messages in the player's queue
 		let messages = this._player.getMessages();
 		var messageY = 0;
@@ -203,19 +205,44 @@ Game.Screen.playScreen = {
 		}
 		
 		// STATUS RENDER
-		// Show hp, location, other stats TBD
-		let status = '%c{white}%b{black}';
-		status += vsprintf('HP: %d/%d   (%d, %d)',
-			[this._player.getHp(), this._player.getMaxHp(),
-			this._player.getX(), this._player.getY()]);
-		display.drawText(0, screenHeight, status); // this hits row 1 of 2 blank at the bottom
-		// NOTE: screenHeight-1 is the last row of the playing field
-		
-		let stats2 = vsprintf('Level: %d, XP: %d', [this._player.getLevel(), this._player.getXp()]);
-		display.drawText(0, screenHeight+1, stats2);
-		// show hunger in row two, right side
-		let hungerState = this._player.getHungerState(true);	// use true for numeric debug. turn counting
-		display.drawText(screenWidth - hungerState.length, screenHeight+1, hungerState);
+		// In play mode, show stats.  In look mode, show other things
+		if(this._mode == 'play'){
+			let status = '%c{white}%b{black}';
+			status += vsprintf('HP: %d/%d   (%d, %d)',
+				[this._player.getHp(), this._player.getMaxHp(),
+				this._player.getX(), this._player.getY()]);
+			display.drawText(0, screenHeight, status); // this hits row 1 of 2 blank at the bottom
+			// NOTE: screenHeight-1 is the last row of the playing field
+			
+			let stats2 = vsprintf('Level: %d, XP: %d', [this._player.getLevel(), this._player.getXp()]);
+			display.drawText(0, screenHeight+1, stats2);
+			// show hunger in row two, right side
+			let hungerState = this._player.getHungerState(false);	// use true for numeric debug. turn counting
+			display.drawText(screenWidth - hungerState.length, screenHeight+1, hungerState);
+		} else if (this._mode == 'look') {
+			display.drawText(0, screenHeight, "cursor is visible? " + cursorIsVisible);
+			let lookText = '';
+			if (cursorIsVisible) {
+				let capitalize = true;
+				let entAt =  map.getEntityAt(this._cursor.x, this._cursor.y, currentDepth);
+				let itemsAt = map.getItemsAt(this._cursor.x, this._cursor.y, currentDepth);
+				let tileAt =     map.getTile(this._cursor.x, this._cursor.y, currentDepth);
+				if (entAt){
+					lookText += entAt.describeA(capitalize);
+					capitalize = false;
+				}
+				if (itemsAt) {
+					if (!capitalize) { lookText += ' and '}
+					lookText += itemsAt[0].describeA(capitalize);
+					if(itemsAt.length > 1) {lookText += ' and other items'}
+				}
+				if(!entAt && !itemsAt){
+					lookText += tileAt._name;
+				}
+				
+				display.drawText(0, screenHeight+1, lookText);
+			}
+		}
 		
     }, //render()
 	
@@ -232,6 +259,25 @@ Game.Screen.playScreen = {
 			this._subScreen.handleInput(inputType, inputData);
 			return;
 		}
+		// If you're looking around
+		if (this._mode == 'look'){
+			console.log("In look mode, inputData.keyCode: " + inputData.keyCode);
+			switch(inputData.keyCode){
+				case ROT.VK_NUMPAD1: {this._cursor.x += -1; this._cursor.y +=  1; break; }
+				case ROT.VK_NUMPAD2: {this._cursor.x +=  0; this._cursor.y +=  1; break; }
+				case ROT.VK_NUMPAD3: {this._cursor.x +=  1; this._cursor.y +=  1; break; }
+				case ROT.VK_NUMPAD4: {this._cursor.x += -1; this._cursor.y +=  0; break; }
+				case ROT.VK_NUMPAD6: {this._cursor.x +=  1; this._cursor.y +=  0; break; }
+				case ROT.VK_NUMPAD7: {this._cursor.x += -1; this._cursor.y += -1; break; }
+				case ROT.VK_NUMPAD8: {this._cursor.x +=  0; this._cursor.y += -1; break; }
+				case ROT.VK_NUMPAD9: {this._cursor.x +=  1; this._cursor.y += -1; break; }				
+				case ROT.VK_L:{	this._mode = 'play'; break; }
+			}
+			Game.refresh();
+			return;
+		}
+		
+		// Ok, no special cases, so handle input like you're playing
 		if (inputType === 'keydown') {
             // Movement
 			switch(inputData.keyCode){
@@ -253,7 +299,7 @@ Game.Screen.playScreen = {
 				*
 				*  Now with unnecessary (optional) braces, for nice folding */
 				
-				case ROT.VK_SLASH: {
+				case ROT.VK_SLASH: {	// Help menu
 					if(inputData.shiftKey) {
 						this.setSubScreen(Game.Screen.helpScreen);
 						return;
@@ -271,6 +317,14 @@ Game.Screen.playScreen = {
 					this._player.removeMixin(Game.EntityMixins.Digger);
 					return;
 				}
+				
+				case ROT.VK_L:{	// LOOK
+					this._mode = 'look';
+					Game.refresh();
+					return;
+				}
+				
+				// Non-debug commands
 				
 				case ROT.VK_E:{ // EAT COMESTIBLE
 					this.showItemsSubScreen(Game.Screen.eatScreen , this._player.getItems(), "You're not carrying anything to eat.");
@@ -647,6 +701,7 @@ Game.Screen.wearScreen = new Game.Screen.ItemListScreen({
 	}
 });
 
+	
 
 
 
