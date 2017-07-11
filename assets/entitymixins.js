@@ -1,6 +1,7 @@
 // Create our EntityMixins namespace
 Game.EntityMixins = {};
 
+
 // Generic Mixins
 Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 	name: 'Attacker',
@@ -8,18 +9,40 @@ Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 	init: function(template){
 		this._attackValue = template['attackValue'] || 1;
 	},
-	getAttackValue: function(){
+	getAttackValue: function(ranged = false){
 		let modifier = 0;
 		// Take weapons/armor into consideration, if neccessary
+		// MAybe allow crossover bonuses from ranged/melee weapons?
 		if (this.hasMixin(Game.EntityMixins.Equipper)) {
-			if (this.getWeapon()) { modifier += this.getWeapon().getAttackValue() }
-			if (this.getArmor()) { modifier += this.getArmor().getAttackValue() }
+			if(!ranged){
+				if (this.getWeapon()) { modifier += this.getWeapon().getAttackValue() }
+				if (this.getArmor()) { modifier += this.getArmor().getAttackValue() }
+			} else {
+				if (this.getRangedWeapon()) { modifier += this.getRangedWeapon().getRangedAttackValue() }
+				if (this.getArmor()) { modifier += this.getArmor().getRangedAttackValue() }
+			}
+			
 		}
 		return this._attackValue + modifier;
 	},
 	attack: function(target){
 		if(target.hasMixin('Destructible')){
 			let attack = this.getAttackValue();
+			let defense = target.getDefenseValue();
+			let max = Math.max(0, attack - defense);
+			let damage = 1 + Math.floor(Math.random() * max);
+			
+			Game.sendMessage(this, 'You strike the %s for %d damage!', [target.getName(), damage]);
+			Game.sendMessage(target, 'The %s strikes you for %d damage', [this.getName(), damage]);
+			
+			target.takeDamage(this, damage);
+		}
+	},
+	rangedAttack: function(target){ 
+		// For now, we're ignoring entities between the attacker and the target
+		// When/if we decide to handle that, it may be here, it may be in the targeting UI section
+		if(target.hasMixin('Destructible')){
+			let attack = this.getRangedAttackValue();
 			let defense = target.getDefenseValue();
 			let max = Math.max(0, attack - defense);
 			let damage = 1 + Math.floor(Math.random() * max);

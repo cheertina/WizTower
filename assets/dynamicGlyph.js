@@ -3,10 +3,13 @@ Game.DynamicGlyph = function(properties){
 	properties = properties || {};
 	
 	// Call the glyph's constructor with our set of properties
+	// This constructor handles the following properties:
+	// character
+	// foreground color
+	// background color
 	Game.Glyph.call(this, properties);
 	
 	// Instantiate properties from the passed object
-	// This constructor should handle all properties that both Items and Entities have
 	this._name = properties['name'] || '';
 	
 	// Create an object which will keep track of the mixins

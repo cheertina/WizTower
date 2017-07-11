@@ -1,7 +1,7 @@
 Game.Glyph = function(properties) {
 	// fill in default values if necessary
 	properties = properties || {}
-	this._char = properties['character'] || ' ';
+	this._char 		 = properties['character'] || ' ';
 	this._foreground = properties['foreground'] || 'white';
 	this._background = properties['background'] || 'black';
 };
