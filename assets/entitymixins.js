@@ -9,19 +9,23 @@ Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 	init: function(template){
 		this._attackValue = template['attackValue'] || 1;
 	},
-	getAttackValue: function(ranged = false){
+	getAttackValue: function(){
 		let modifier = 0;
 		// Take weapons/armor into consideration, if neccessary
-		// MAybe allow crossover bonuses from ranged/melee weapons?
 		if (this.hasMixin(Game.EntityMixins.Equipper)) {
-			if(!ranged){
-				if (this.getWeapon()) { modifier += this.getWeapon().getAttackValue() }
-				if (this.getArmor()) { modifier += this.getArmor().getAttackValue() }
-			} else {
-				if (this.getRangedWeapon()) { modifier += this.getRangedWeapon().getRangedAttackValue() }
-				if (this.getArmor()) { modifier += this.getArmor().getRangedAttackValue() }
-			}
-			
+			if (this.getArmor()) { modifier += this.getArmor().getAttackValue() }
+			if (this.getWeapon()) { modifier += this.getWeapon().getAttackValue() }
+			if (this.getRangedWeapon()) { modifier += this.getRangedWeapon().getAttackValue() }
+		}
+		return this._attackValue + modifier;
+	},
+	getRangedAttackValue: function(){
+		let modifier = 0;
+		// Take weapons/armor into consideration, if neccessary
+		if (this.hasMixin(Game.EntityMixins.Equipper)) {
+			if (this.getArmor()) { modifier += this.getArmor().getRangedAttackValue() }
+			if (this.getWeapon()) { modifier += this.getWeapon().getRangedAttackValue() }
+			if (this.getRangedWeapon()) { modifier += this.getRangedWeapon().getRangedAttackValue() }
 		}
 		return this._attackValue + modifier;
 	},
@@ -47,8 +51,8 @@ Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 			let max = Math.max(0, attack - defense);
 			let damage = 1 + Math.floor(Math.random() * max);
 			
-			Game.sendMessage(this, 'You strike the %s for %d damage!', [target.getName(), damage]);
-			Game.sendMessage(target, 'The %s strikes you for %d damage', [this.getName(), damage]);
+			Game.sendMessage(this, 'You shoot the %s for %d damage!', [target.getName(), damage]);
+			Game.sendMessage(target, 'The %s shoots you for %d damage', [this.getName(), damage]);
 			
 			target.takeDamage(this, damage);
 		}
@@ -283,6 +287,7 @@ Game.EntityMixins.CorpseDropper = { // Entity can drop a corpse when killed
 	}
 }
 
+
 // XP, Levels, and Stats
 Game.EntityMixins.ExperienceGainer = {
 	name: 'ExperienceGainer',
@@ -455,20 +460,31 @@ Game.EntityMixins.Equipper = {
 	init: function(template){
 		// For now, one weapon and one armor
 		this._weapon = null;
+		this._rangedWeapon = null;
 		this._armor = null;
 	},
-	wield: function(item){ this._weapon = item;	},
+	wield: function(item){ 
+		if(item.isRanged()){
+			this._rangedWeapon = item;
+		} else {
+			this._weapon = item;
+		}
+	},
 	unwield: function(){ this._weapon = null; },
+	unwieldRanged: function() { this._rangedWeapon = null; },
 	wear: function(item){ this._armor = item; },
 	unwear: function(item){ this._armor = null; },
 	getWeapon: function() { return this._weapon; },
+	getRangedWeapon: function() { return this._rangedWeapon; },
 	getArmor: function (){ return this._armor; },
 	unequip: function(item){
 		// Generic/helper function to call before getting rid of an item (dropping, destroying, etc.)
+		if (this._rangedWeapon === item) { this.unwieldRanged(); }
 		if (this._weapon === item) { this.unwield(); }
 		if (this._armor === item) { this.unwear(); }
 	}
 };
+
 
 // AI Mixins - 'Actor' group
 Game.EntityMixins.PlayerActor = {

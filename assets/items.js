@@ -43,6 +43,17 @@ Game.ItemRepository.define('dagger', {
 	mixins: [Game.ItemMixins.Equippable]
 }, { disableRandomCreation: true });
 
+Game.ItemRepository.define('bow', {
+	name: 'bow',
+	character: [')','='],
+	forground: 'white',
+	rangedAttackValue: 6,
+	attackValue: 1,	// Whack 'em with the bow!
+	wieldable: true,
+	ranged: true,
+	mixins: [Game.ItemMixins.Equippable]
+}, { disableRandomCreation: true });
+
 Game.ItemRepository.define('sword', {
 	name: 'sword',
 	character: ')',
@@ -61,6 +72,7 @@ Game.ItemRepository.define('staff', {
 	wieldable: true,
 	mixins: [Game.ItemMixins.Equippable]
 }, { disableRandomCreation: true });
+
 // Armor
 Game.ItemRepository.define('tunic', {
 	name: 'tunic',

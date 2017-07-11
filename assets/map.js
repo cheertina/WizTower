@@ -49,9 +49,9 @@ Game.Map = function(tiles, player){
 		}
 	}
 	// Add one each of our weapons and armor
-	let templates = ['dagger', 'sword', 'staff', 'tunic', 'chainmail', 'platemail'];
+	let templates = ['dagger', 'sword', 'staff', 'tunic', 'chainmail', 'platemail', 'bow'];
 	for (let i = 0; i < templates.length; i++){
-		this.addItemAtRandomPosition(Game.ItemRepository.create(templates[i]), Math.floor(this._depth * Math.random()));
+		this.addItemAtRandomPosition(Game.ItemRepository.create(templates[i]), 0);
 	}
 	
 	
@@ -132,6 +132,7 @@ Game.Map.prototype.addItem = function(key, item){
 Game.Map.prototype.addItemAtRandomPosition = function(item, z){
 	let pos = this.getRandomFloorPosition(z);
 	this.addItem(pos.str, item);
+	console.log(item._name + ' added at (' + pos.str + ')')
 }
 
 

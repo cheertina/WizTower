@@ -35,11 +35,13 @@ Game.ItemMixins.Equippable = {	// Item can be worn or wielded
 		this._rangedAttackValue = template['rangedAttackValue'] || 0,
 		this._defenseValue = template['defenseValue'] || 0;
 		this._wieldable = template['wieldable'] || false;
+		this._ranged = template['ranged'] || false;
 		this._wearable = template['wearable'] || false;
 	},
 	getAttackValue: function(){ return this._attackValue; },
 	getRangedAttackValue: function() { return this._rangedAttackValue; },
 	getDefenseValue: function(){ return this._defenseValue; },
+	isRanged: function() { return (this._wieldable && this._ranged); },
 	isWieldable: function(){ return this._wieldable; },
 	isWearable: function(){ return this._wearable; }
 };
