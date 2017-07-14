@@ -233,7 +233,8 @@ Game.Screen.playScreen = {
 			// show hunger in row two, right side
 			let hungerState = this._player.getHungerState(false);	// use true for numeric debug. turn counting
 			display.drawText(screenWidth - hungerState.length, screenHeight+1, '%c{white}%b{black}' + hungerState);
-		} else if (this._mode == 'look' || this._mode == 'target') {
+		} 
+		if (this._mode == 'look' || this._mode == 'target') { // In either 'look' or 'target' mode, show what's under the cursor
 			let lookText = '';
 			if (cursorIsVisible) {
 				let capitalize = true;
@@ -261,6 +262,9 @@ Game.Screen.playScreen = {
 				lookText = 'Unexplored';
 			}
 			display.drawText(0, screenHeight+1, lookText);
+		}
+		if (this._mode == 'target') {
+			display.drawText(0, screenHeight, "Targeting ranged attack");
 		}
 		
     }, //render()
@@ -290,10 +294,17 @@ Game.Screen.playScreen = {
 			if (this._mode == 'target'){
 				// Confirm Attack
 				if (inputData.keyCode === ROT.VK_RETURN) {
-					console.log('I shold be making a ranged attack');
+					console.log('I should be making a ranged attack');
 					if(this._mode == 'target'){
 						var target = this._map.getEntityAt(this._cursor.x, this._cursor.y, this._player.getZ());
-						this._player.rangedAttack(target);
+						if(target){
+							this._player.rangedAttack(target, this._player.getAmmoSlot());
+						} else {
+							let m = this._map;
+							let aS = this._player.getAmmoSlot();
+							let ammoItem = this._player.removeItem(aS);
+							m.addItem(this._cursor.x+','+this._cursor.y+','+this._player.getZ(), ammoItem);
+						}
 						this._mode = 'play';
 						this._map.getEngine().unlock();
 					}
@@ -348,6 +359,16 @@ Game.Screen.playScreen = {
 				
 				// DEBUG COMMANDS
 				case ROT.VK_R:{ //Ranged attack testing
+					if(!this._player.getRangedWeapon()){
+						Game.sendMessage(this._player, "You're not wielding a ranged weapon");
+						Game.refresh();
+						return;
+					}
+					if(this._player.getAmmoSlot() == -1){	// getAmmoSlot returns an array index or -1 if no ammo
+						Game.sendMessage(this._player, "You don't have any ammo for that");
+						Game.refresh();
+						return;
+					}
 					this._mode = 'target';
 					Game.refresh();
 					return;
@@ -612,7 +633,7 @@ Game.Screen.ItemListScreen.prototype.render = function(display) {
 			let suffix = '';
 			if (this._items[slot] === this._player.getArmor()) { suffix = ' (wearing)'; }
 			if (this._items[slot] === this._player.getWeapon()){ suffix = ' (wielding)'; }
-			
+			if (this._items[slot] === this._player.getRangedWeapon()){ suffix = ' (ranged)'; }
 			dispStr = letter + ' ' + selectionState+ '   ' + this._items[slot].describe() + suffix;
 			display.drawText(0, row, dispStr);
 			// Display the character for the item, in the right color
