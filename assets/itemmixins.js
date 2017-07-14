@@ -32,13 +32,43 @@ Game.ItemMixins.Equippable = {	// Item can be worn or wielded
 	name: 'Equippable',
 	init: function(template){
 		this._attackValue = template['attackValue'] || 0;
+		this._rangedAttackValue = template['rangedAttackValue'] || 0,
 		this._defenseValue = template['defenseValue'] || 0;
-		this._wieldable = template['wieldable'] || false;
 		this._wearable = template['wearable'] || false;
+		this._wieldable = template['wieldable'] || false;
+		this._ranged = template['ranged'] || false;
+		this._ammoType = template['ammoType'] || 'magic';
 	},
 	getAttackValue: function(){ return this._attackValue; },
+	getRangedAttackValue: function() { return this._rangedAttackValue; },
 	getDefenseValue: function(){ return this._defenseValue; },
+	getAmmoType: function() {return this._ammoType; },
+	isRanged: function() { return (this._wieldable && this._ranged); },
 	isWieldable: function(){ return this._wieldable; },
 	isWearable: function(){ return this._wearable; }
+	
+};
+
+Game.ItemMixins.Stackable = {
+	name: 'Stackable',
+	init: function(template){
+		// DEBUG console.log('Stackable item init');
+		this._stackSize = template['stackSize'] || 5;
+		this._stackCount = template['stackCount'] || 1;
+	},
+	incCount: function(num = 1){
+		// DEBUG console.log("itemmixins.js 60 in incCount()")
+		let leftover = 0;
+		if (this._stackCount + num > this._stackSize) { 
+			leftover = this._stackSize - (this._stackCount + num); 
+		}
+		this._stackCount += num - leftover;
+		return leftover;
+	},
+	decCount: function(){
+		this._stackCount--;
+		return this._stackCount;
+	}
+	
 };
 

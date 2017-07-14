@@ -20,7 +20,9 @@ Game.ItemRepository.define('melon', {
 Game.ItemRepository.define('rock', {
 	name: 'rock',
 	character: '*',
-	foreground: 'white'
+	foreground: 'white',
+	stackSize: 10,
+	mixins: [Game.ItemMixins.Stackable]
 });
 
 Game.ItemRepository.define('corpse', {
@@ -33,7 +35,31 @@ Game.ItemRepository.define('corpse', {
 	disableRandomCreation: true
 });
 
-// Weapons
+// Ranged Weapons
+Game.ItemRepository.define('sling', {
+	name: 'sling',
+	character: [')','='],
+	forground: 'grey',
+	rangedAttackValue: 2,
+	wieldable: true,
+	ranged: true,
+	ammoType: 'rock',
+	mixins: [Game.ItemMixins.Equippable]
+}, { disableRandomCreation: true });
+
+Game.ItemRepository.define('Staff of Energy Bolt', {
+	name: 'Staff of Energy Bolt',
+	character: ['!'],
+	foreground: 'yellow',
+	attackValue: 2,
+	rangedAttackValue: 6,
+	wieldable: true,
+	ranged: true,
+	ammoType: 'magic',
+	mixins: [Game.ItemMixins.Equippable]
+}, {disableRandomCreation: true})
+
+// Melee Weapons
 Game.ItemRepository.define('dagger', {
 	name: 'dagger',
 	character: ')',
@@ -52,7 +78,7 @@ Game.ItemRepository.define('sword', {
 	mixins: [Game.ItemMixins.Equippable]
 }, { disableRandomCreation: true });
 
-Game.ItemRepository.define('staff', {
+Game.ItemRepository.define('quarterstaff', {
 	name: 'staff',
 	character: ')',
 	foreground: 'yellow',
@@ -61,6 +87,7 @@ Game.ItemRepository.define('staff', {
 	wieldable: true,
 	mixins: [Game.ItemMixins.Equippable]
 }, { disableRandomCreation: true });
+
 // Armor
 Game.ItemRepository.define('tunic', {
 	name: 'tunic',

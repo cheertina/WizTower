@@ -14,9 +14,6 @@ var Game =  {
 		};
         this._display = new ROT.Display(displayOptions);
 		
-        
-		
-		
 		// Create a helper function for binding to an event
         // and making it send it to the screen
         var game = this; // So that we don't lose this
@@ -66,6 +63,8 @@ var Game =  {
             this.refresh();
         }
     }	// switchScreen
+	
+	
 };
 
 window.onload = function() {
@@ -81,3 +80,4 @@ window.onload = function() {
         Game.switchScreen(Game.Screen.startScreen);
     }
 };
+

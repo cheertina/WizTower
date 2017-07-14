@@ -108,7 +108,7 @@ Game.Screen.playScreen = {
 		let screenHeight = Game.getScreenHeight();
 		
 		let screenCenter = {x: this._player.getX(), y: this._player.getY()}
-		if(this._mode == 'look') {
+		if(this._mode == 'look' || this._mode == 'target') {
 			screenCenter.x = this._cursor.x;
 			screenCenter.y = this._cursor.y;
 		} else {
@@ -179,8 +179,8 @@ Game.Screen.playScreen = {
 					// See if we need to render the cursor, too
 					// box the character we want to show, just in case
 					// The draw function handles arrays by combining the characters
-					let dispChar = [glyph.getChar()];
-					if (this._mode == 'look' && this._cursor.x == x && this._cursor.y == y){
+					let dispChar = glyph.getChar();
+					if ((this._mode == 'look' || this._mode == 'target') && this._cursor.x == x && this._cursor.y == y){
 						dispChar.push('_');
 						cursorIsVisible = true;
 					}
@@ -193,6 +193,16 @@ Game.Screen.playScreen = {
 						foreground,
 						glyph.getBackground()
 					);
+				} else if ((this._mode == 'look' || this._mode == 'target') && this._cursor.x == x && this._cursor.y == y) {	// If our look cursor is in unexplored territory
+					display.draw(
+						x - topLeftX,
+						y - topLeftY,
+						'_',
+						'white',
+						'black'
+					)
+					
+					
 				}
 			}
 		}
@@ -207,20 +217,24 @@ Game.Screen.playScreen = {
 		// STATUS RENDER
 		// In play mode, show stats.  In look mode, show other things
 		if(this._mode == 'play'){
-			let status = '%c{white}%b{black}';
-			status += vsprintf('HP: %d/%d   (%d, %d)',
+			let status1_1 = vsprintf('HP: %d/%d   (%d, %d)',
 				[this._player.getHp(), this._player.getMaxHp(),
 				this._player.getX(), this._player.getY()]);
-			display.drawText(0, screenHeight, status); // this hits row 1 of 2 blank at the bottom
+			let status1_2 = vsprintf('Weapon: %s  Ranged Weapon: %s  Armor: %s', [
+				(this._player.getWeapon() ? this._player.getWeapon().describe() : "None"),
+				(this._player.getRangedWeapon() ? this._player.getRangedWeapon().describe() : "None"),
+				(this._player.getArmor() ? this._player.getArmor().describe() : "None")]);
+			display.drawText(0, screenHeight,  '%c{white}%b{black}' + status1_1); // this hits row 1 of 2 blank at the bottom
+			display.drawText(24, screenHeight, '%c{white}%b{black}' + status1_2); // this hits row 1 of 2 blank at the bottom
 			// NOTE: screenHeight-1 is the last row of the playing field
 			
-			let stats2 = vsprintf('Level: %d, XP: %d', [this._player.getLevel(), this._player.getXp()]);
-			display.drawText(0, screenHeight+1, stats2);
+			let status2_1 = vsprintf('Level: %d, XP: %d', [this._player.getLevel(), this._player.getXp()]);
+			display.drawText(0, screenHeight+1, '%c{white}%b{black}' + status2_1);
 			// show hunger in row two, right side
 			let hungerState = this._player.getHungerState(false);	// use true for numeric debug. turn counting
-			display.drawText(screenWidth - hungerState.length, screenHeight+1, hungerState);
-		} else if (this._mode == 'look') {
-			display.drawText(0, screenHeight, "cursor is visible? " + cursorIsVisible);
+			display.drawText(screenWidth - hungerState.length, screenHeight+1, '%c{white}%b{black}' + hungerState);
+		} 
+		if (this._mode == 'look' || this._mode == 'target') { // In either 'look' or 'target' mode, show what's under the cursor
 			let lookText = '';
 			if (cursorIsVisible) {
 				let capitalize = true;
@@ -228,7 +242,11 @@ Game.Screen.playScreen = {
 				let itemsAt = map.getItemsAt(this._cursor.x, this._cursor.y, currentDepth);
 				let tileAt =     map.getTile(this._cursor.x, this._cursor.y, currentDepth);
 				if (entAt){
-					lookText += entAt.describeA(capitalize);
+					if(entAt._name !== 'you'){
+						lookText += entAt.describeA(capitalize);
+					} else {
+						lookText += 'You';
+					}
 					capitalize = false;
 				}
 				if (itemsAt) {
@@ -240,52 +258,89 @@ Game.Screen.playScreen = {
 					lookText += tileAt._name;
 				}
 				
-				display.drawText(0, screenHeight+1, lookText);
+			} else {
+				lookText = 'Unexplored';
 			}
+			display.drawText(0, screenHeight+1, lookText);
+		}
+		if (this._mode == 'target') {
+			display.drawText(0, screenHeight, "Targeting ranged attack");
 		}
 		
     }, //render()
 	
     handleInput: function(inputType, inputData) {
-		// If the game is over, press any key to go to Game Over screen
-		if (inputType === 'keydown' && this._gameEnded){
-			if (inputData.keyCode === ROT.VK_RETURN) {
-				Game.switchScreen(Game.Screen.loseScreen);
-			}
-			return; // Don't respond to any other input
-        }
-		// If there's a subscreen, do that instead
+		// If there's a subscreen, use that handler instead
 		if(this._subScreen){
 			this._subScreen.handleInput(inputType, inputData);
 			return;
 		}
-		// If you're looking around
-		if (this._mode == 'look'){
-			console.log("In look mode, inputData.keyCode: " + inputData.keyCode);
-			switch(inputData.keyCode){
-				case ROT.VK_NUMPAD1: {this._cursor.x += -1; this._cursor.y +=  1; break; }
-				case ROT.VK_NUMPAD2: {this._cursor.x +=  0; this._cursor.y +=  1; break; }
-				case ROT.VK_NUMPAD3: {this._cursor.x +=  1; this._cursor.y +=  1; break; }
-				case ROT.VK_NUMPAD4: {this._cursor.x += -1; this._cursor.y +=  0; break; }
-				case ROT.VK_NUMPAD6: {this._cursor.x +=  1; this._cursor.y +=  0; break; }
-				case ROT.VK_NUMPAD7: {this._cursor.x += -1; this._cursor.y += -1; break; }
-				case ROT.VK_NUMPAD8: {this._cursor.x +=  0; this._cursor.y += -1; break; }
-				case ROT.VK_NUMPAD9: {this._cursor.x +=  1; this._cursor.y += -1; break; }				
-				case ROT.VK_L:{	this._mode = 'play'; break; }
-			}
-			Game.refresh();
-			return;
-		}
-		
-		// Ok, no special cases, so handle input like you're playing
 		if (inputType === 'keydown') {
-            // Movement
+			// If the game is over, press any key to go to Game Over screen
+			if (this._gameEnded){
+				if (inputData.keyCode === ROT.VK_RETURN) {
+					Game.switchScreen(Game.Screen.loseScreen);
+				}
+				return; // Don't respond to any other input
+			}
+			// In look mode
+			if (this._mode == 'look'){
+				if (inputData.keyCode ===ROT.VK_L){ 
+					this._mode = 'play';
+					return; 
+				}
+			}
+			// Targeting a ranged attack (and eventually a ranged spell)
+			if (this._mode == 'target'){
+				// Confirm Attack
+				if (inputData.keyCode === ROT.VK_RETURN) {
+					console.log('I should be making a ranged attack');
+					if(this._mode == 'target'){
+						var target = this._map.getEntityAt(this._cursor.x, this._cursor.y, this._player.getZ());
+						if(target){
+							this._player.rangedAttack(target, this._player.getAmmoSlot());
+						} else {
+							let m = this._map;
+							let aS = this._player.getAmmoSlot();
+							let ammoItem = this._player.removeItem(aS);
+							m.addItem(this._cursor.x+','+this._cursor.y+','+this._player.getZ(), ammoItem);
+						}
+						this._mode = 'play';
+						this._map.getEngine().unlock();
+					}
+				}
+				// Cancel Attack
+				if (inputData.keyCode === ROT.VK_ESC) {
+					this._mode = 'play';
+					return;
+				}
+			}
+			// If you're moving a cursor
+			if (this._mode == 'look' || this._mode == 'target'){
+				console.log("In look mode, inputData.keyCode: " + inputData.keyCode);
+				switch(inputData.keyCode){
+					case ROT.VK_NUMPAD1: {this.cursorMove(-1,  1); break; }
+					case ROT.VK_NUMPAD2: {this.cursorMove( 0,  1); break; }
+					case ROT.VK_NUMPAD3: {this.cursorMove( 1,  1); break; }
+					case ROT.VK_NUMPAD4: {this.cursorMove(-1,  0); break; }
+					case ROT.VK_NUMPAD6: {this.cursorMove( 1,  0); break; }
+					case ROT.VK_NUMPAD7: {this.cursorMove(-1, -1); break; }
+					case ROT.VK_NUMPAD8: {this.cursorMove( 0, -1); break; }
+					case ROT.VK_NUMPAD9: {this.cursorMove( 1, -1); break; }
+				}
+				Game.refresh();
+				return;
+			}
+			
+			// Default gameplay mode
+				
 			switch(inputData.keyCode){
+				// Movement
 				case ROT.VK_NUMPAD1: this.move(-1,  1, 0); break;
 				case ROT.VK_NUMPAD2: this.move( 0,  1, 0); break;
 				case ROT.VK_NUMPAD3: this.move( 1,  1, 0); break;
 				case ROT.VK_NUMPAD4: this.move(-1,  0, 0); break;
-				case ROT.VK_NUMPAD5: /*this.move( 0,  0, 0);*/ break; 	// nop; moving on top of self causes attacking self
+				case ROT.VK_NUMPAD5: break; 	// Spend a turn to do nothing - wait
 				case ROT.VK_NUMPAD6: this.move( 1,  0, 0); break;
 				case ROT.VK_NUMPAD7: this.move(-1, -1, 0); break;
 				case ROT.VK_NUMPAD8: this.move( 0, -1, 0); break;
@@ -294,20 +349,30 @@ Game.Screen.playScreen = {
 				*  I _think_ that any branch that hits a "return" should be free,
 				*  and anything that doesn't needs to hit a "break" to avoid fall-through
 				*  turns are spent if the executeOkFunction on the subscreen returns true
-				*  there might be a an automatic cost on any branch that calls executeOkFunction
-				*  but you can't see that here, so grab a console.log, and good luck
+				*  there might be an automatic cost on any branch that calls executeOkFunction
+				*  but you can't see that here, so grab a console.log, and good luck.
 				*
-				*  Now with unnecessary (optional) braces, for nice folding */
+				*  Use this._player.getHungerState(true); in the status render for accurate turn counting
+				*/
 				
-				case ROT.VK_SLASH: {	// Help menu
-					if(inputData.shiftKey) {
-						this.setSubScreen(Game.Screen.helpScreen);
+				//  Now with unnecessary (optional) braces, for nice folding
+				
+				// DEBUG COMMANDS
+				case ROT.VK_R:{ //Ranged attack testing
+					if(!this._player.getRangedWeapon()){
+						Game.sendMessage(this._player, "You're not wielding a ranged weapon");
+						Game.refresh();
 						return;
 					}
+					if(this._player.getAmmoSlot() == -1){	// getAmmoSlot returns an array index or -1 if no ammo
+						Game.sendMessage(this._player, "You don't have any ammo for that");
+						Game.refresh();
+						return;
+					}
+					this._mode = 'target';
+					Game.refresh();
+					return;
 				}
-				
-				// TODO: Delete these - it's currently for testing the ability
-				// to add mixins after the entity has been created
 				case ROT.VK_N:{
 					this._player.addMixin(Game.EntityMixins.Digger); 
 					return; 
@@ -317,28 +382,35 @@ Game.Screen.playScreen = {
 					this._player.removeMixin(Game.EntityMixins.Digger);
 					return;
 				}
+				//
+				// END DEBUG
 				
-				case ROT.VK_L:{	// LOOK
+				
+				// Non-debug commands
+				// DROP ITEM
+				case ROT.VK_D: {
+					this.showItemsSubScreen(Game.Screen.dropScreen , this._player.getItems(), "You're not carrying anything to drop.");
+					return;
+				}
+				// EAT COMESTIBLE
+				case ROT.VK_E: {
+					this.showItemsSubScreen(Game.Screen.eatScreen , this._player.getItems(), "You're not carrying anything to eat.");
+					return;
+				}
+				// INVENTORY
+				case ROT.VK_I: {
+					this.showItemsSubScreen(Game.Screen.inventoryScreen , this._player.getItems(), "You are not carrying anything.");
+					return;
+				}
+				// LOOK
+				case ROT.VK_L: {
 					this._mode = 'look';
 					Game.refresh();
 					return;
 				}
-				
-				// Non-debug commands
-				
-				case ROT.VK_E:{ // EAT COMESTIBLE
-					this.showItemsSubScreen(Game.Screen.eatScreen , this._player.getItems(), "You're not carrying anything to eat.");
-					return;
-				}
-				case ROT.VK_D:{	// DROP ITEM
-					this.showItemsSubScreen(Game.Screen.dropScreen , this._player.getItems(), "You're not carrying anything to drop.");
-					return;
-				}
-				case ROT.VK_I:{	// INVENTORY
-					this.showItemsSubScreen(Game.Screen.inventoryScreen , this._player.getItems(), "You are not carrying anything.");
-					return;
-				}
-				case ROT.VK_W:{ // WIELD/WEAR
+				// {none} WIELD
+				// {shift} WEAR
+				case ROT.VK_W: {
 					if (inputData.shiftKey){ 
 						this.showItemsSubScreen(Game.Screen.wearScreen , this._player.getItems(), "You have nothing to wear");
 					} else {
@@ -346,7 +418,13 @@ Game.Screen.playScreen = {
 					}
 					return;
 				}
-				case ROT.VK_COMMA:{	// PICK UP ITEMS
+				// {none} PICK UP ITEMS
+				// {shift} GO UP STAIRS
+				case ROT.VK_COMMA: {
+					if (inputData.shiftKey) { 
+						this.move(0, 0, -1); 
+						break; 
+					}
 					let items = this._map.getItemsAt(this._player.getX(), this._player.getY(), this._player.getZ())
 					// If there are no items, show a message
 					if (items && items.length === 1){
@@ -362,8 +440,23 @@ Game.Screen.playScreen = {
 						this.showItemsSubScreen(Game.Screen.pickupScreen, items, "There is nothing here to pick up.");
 					}
 					return;
-				}	
-				
+				}
+				// {none} No function
+				// {shift}: GO DOWN STAIRS
+				case ROT.VK_PERIOD: {
+					if (inputData.shiftKey){
+						this.move(0, 0, 1);
+						break;
+					}
+				}
+				// {none}: No function
+				// {shift}: HELP MENU
+				case ROT.VK_SLASH: {	
+					if(inputData.shiftKey) {
+						this.setSubScreen(Game.Screen.helpScreen);
+						return;
+					}
+				}
 				// DEFAULT CASE - you hit a button that doesn't do anything
 				default: return;
 			}
@@ -372,18 +465,7 @@ Game.Screen.playScreen = {
 				// e.g. checking the inventory, picking up no items, dropping no items
 				this._map.getEngine().unlock();
 			
-        } else if (inputType == 'keypress') {
-			let keyChar = String.fromCharCode(inputData.charCode);
-			if (keyChar === '>') {
-				this.move(0, 0, 1);
-			} else if (keyChar === '<'){
-				this.move(0, 0, -1);
-			} else {
-				return;
-			}
-			// Unlock the engine
-			this._map.getEngine().unlock();
-		}
+        }
     }, // handleInput()
 	
 	// Move the "center" of viewport around the map
@@ -395,7 +477,12 @@ Game.Screen.playScreen = {
 		this._player.tryMove(newX, newY, newZ, this._map);
 		
 	},	// move()
-	
+	cursorMove: function(dX, dY){
+		let newX = Math.max(0,Math.min(this._map.getWidth(), this._cursor.x + dX));
+		let newY = Math.max(0,Math.min(this._map.getHeight(), this._cursor.y + dY));
+		this._cursor.x = newX;
+		this._cursor.y = newY;
+	},
 	setGameEnded: function(gameEnded){
 		this._gameEnded = gameEnded;
 	},
@@ -546,12 +633,11 @@ Game.Screen.ItemListScreen.prototype.render = function(display) {
 			let suffix = '';
 			if (this._items[slot] === this._player.getArmor()) { suffix = ' (wearing)'; }
 			if (this._items[slot] === this._player.getWeapon()){ suffix = ' (wielding)'; }
-			
-			dispStr = letter + ' ' + selectionState+ ' ';
-			// Display the character for the item, in the right color
-			dispStr += '%c{'+ this._items[slot].getForeground()+'}' + this._items[slot].getChar() + '%c{} ';
-			dispStr += this._items[slot].describe() + suffix;
+			if (this._items[slot] === this._player.getRangedWeapon()){ suffix = ' (ranged)'; }
+			dispStr = letter + ' ' + selectionState+ '   ' + this._items[slot].describe() + suffix;
 			display.drawText(0, row, dispStr);
+			// Display the character for the item, in the right color
+			display.draw(4, row, this._items[slot].getChar(), this._items[slot].getForeground());
 			
 		}
 		row++;
@@ -666,6 +752,7 @@ Game.Screen.wieldScreen = new Game.Screen.ItemListScreen({
 		let keys = Object.keys(selectedItems);
 		if(keys.length === 0) {
 			this._player.unwield();
+			this._player.unwieldRanged();
 			Game.sendMessage(this._player, "You are empty handed.");
 		} else {
 			// Unequip the item first in case it is also armor and can't be worn and wielded at the same time

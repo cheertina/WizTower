@@ -1,6 +1,7 @@
 // Create our EntityMixins namespace
 Game.EntityMixins = {};
 
+
 // Generic Mixins
 Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 	name: 'Attacker',
@@ -12,8 +13,19 @@ Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 		let modifier = 0;
 		// Take weapons/armor into consideration, if neccessary
 		if (this.hasMixin(Game.EntityMixins.Equipper)) {
-			if (this.getWeapon()) { modifier += this.getWeapon().getAttackValue() }
 			if (this.getArmor()) { modifier += this.getArmor().getAttackValue() }
+			if (this.getWeapon()) { modifier += this.getWeapon().getAttackValue() }
+			if (this.getRangedWeapon()) { modifier += this.getRangedWeapon().getAttackValue() }
+		}
+		return this._attackValue + modifier;
+	},
+	getRangedAttackValue: function(){
+		let modifier = 0;
+		// Take weapons/armor into consideration, if neccessary
+		if (this.hasMixin(Game.EntityMixins.Equipper)) {
+			if (this.getArmor()) { modifier += this.getArmor().getRangedAttackValue() }
+			if (this.getWeapon()) { modifier += this.getWeapon().getRangedAttackValue() }
+			if (this.getRangedWeapon()) { modifier += this.getRangedWeapon().getRangedAttackValue() }
 		}
 		return this._attackValue + modifier;
 	},
@@ -28,6 +40,26 @@ Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 			Game.sendMessage(target, 'The %s strikes you for %d damage', [this.getName(), damage]);
 			
 			target.takeDamage(this, damage);
+		}
+	},
+	rangedAttack: function(target, ammoSlot = -1){ 
+		// For now, we're ignoring entities between the attacker and the target
+		// When/if we decide to handle that, it may be here, it may be in the targeting UI section
+		if(target.hasMixin('Destructible')){
+			let attack = this.getRangedAttackValue();
+			let defense = target.getDefenseValue();
+			let max = Math.max(0, attack - defense);
+			let damage = 1 + Math.floor(Math.random() * max);
+			
+			Game.sendMessage(this, 'You shoot the %s for %d damage!', [target.getName(), damage]);
+			Game.sendMessage(target, 'The %s shoots you for %d damage', [this.getName(), damage]);
+			
+			target.takeDamage(this, damage);
+			let ammo = null;
+			if(ammoSlot >= 0 ) { 
+				ammo = this.removeItem(ammoSlot);
+				console.log(JSON.stringify(ammo));
+			}
 		}
 	},
 	increaseAttackValue: function(value){
@@ -62,7 +94,7 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 		// If hp drops to 0 or less, remove ourselves from the map via Game.Entity.kill()
 		if (this._hp <= 0){
 			Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
-			console.log(attacker.getName() + " kills " + this.getName());
+			// DEBUG console.log(attacker.getName() + " kills " + this.getName());
 			// Drop a corpse, if necessary
 			if (this.hasMixin(Game.EntityMixins.CorpseDropper)) {
 				this.tryDropCorpse();
@@ -260,6 +292,7 @@ Game.EntityMixins.CorpseDropper = { // Entity can drop a corpse when killed
 	}
 }
 
+
 // XP, Levels, and Stats
 Game.EntityMixins.ExperienceGainer = {
 	name: 'ExperienceGainer',
@@ -374,6 +407,31 @@ Game.EntityMixins.InventoryHolder = { // Entity can pickup/drop/carry items
 		return this._items[i];
 	},
 	addItem: function(item) {
+		if(item.hasMixin('Stackable')){
+			// DEBUG console.log("entitymixins.js 408 in addItem() with stackable");
+			// DEBUG console.log("this._items = " + JSON.stringify(this._items));
+			
+			// See if there's a stack to add it to
+			for(let slot = 0; slot < this._items.length; slot++) {
+				
+				/*\
+				|*|  console.log("this._items["+slot+"] = " + JSON.stringify(this._items[slot]));
+				|*|  console.log(this._items[slot]);
+				|*|  if(this._items[slot]) {
+				|*|  	console.log(this._items[slot]._name + ' == ' + item._name+': '+ (this._items[slot]._name == item._name));
+				|*|  }
+				\*/
+				
+				
+				
+				
+				
+				if (this._items[slot] && (this._items[slot]._name == item._name)){
+					let leftovers = this._items[slot].incCount(item._stackCount);
+					if(!leftovers) { return true; }
+				}
+			}
+		}
 		// Find an empty slot, or return false if we can't add the item
 		for(let slot = 0; slot < this._items.length; slot++) {
 			if (!this._items[slot]) {
@@ -383,17 +441,41 @@ Game.EntityMixins.InventoryHolder = { // Entity can pickup/drop/carry items
 		}
 		return false;
 	},
-	removeItem: function(slot){
-		if (this._items[slot] && this.hasMixin(Game.EntityMixins.Equipper)) { this.unequip(this._items[slot]); }
-		this._items[slot] = null;
+	removeItem: function(slot, all=false){
+		let removedItem = null;
+		if(this._items[slot].hasMixin('Stackable') && !all ){
+			removedItem = Game.ItemRepository.create(this._items[slot].getName(), {stackCount: 1});
+			let remaining = this._items[slot].decCount();
+			if (remaining == 0) {
+				this._items[slot] = null;
+			}
+		}else{
+			if (this._items[slot] && this.hasMixin('Equipper')) { this.unequip(this._items[slot]); }
+			removedItem = this._items[slot];
+			this._items[slot] = null;
+		}
+		
+		
+		return removedItem;
 	},
 	canAddItem: function(item) {
-		// Find an empty slot, or return false if we can't add the item
+		// First check if there's room for one in a stack we already have
+		if(item.hasMixin('Stackable')){ 
+			for(let slot = 0; slot < this._items.length; slot++) {
+				if ( (this._items[slot].getName() == item.getName) && 
+					 (this._items[slot]._stackCount < this._items[slot].stackSize) ) {
+					return true;
+				}
+			}
+			
+		}
+		// Then find an empty slot
 		for(let slot = 0; slot < this._items.length; slot++) {
 			if (!this._items[slot]) {
 				return true;
 			}
 		}
+		// Return false if we can't add the item
 		return false;
 	},
 	pickupItems: function(indices){
@@ -432,20 +514,46 @@ Game.EntityMixins.Equipper = {
 	init: function(template){
 		// For now, one weapon and one armor
 		this._weapon = null;
+		this._rangedWeapon = null;
 		this._armor = null;
 	},
-	wield: function(item){ this._weapon = item;	},
+	wield: function(item){ 
+		if(item.isRanged()){
+			this._rangedWeapon = item;
+		} else {
+			this._weapon = item;
+		}
+	},
 	unwield: function(){ this._weapon = null; },
+	unwieldRanged: function() { this._rangedWeapon = null; },
 	wear: function(item){ this._armor = item; },
 	unwear: function(item){ this._armor = null; },
 	getWeapon: function() { return this._weapon; },
+	getRangedWeapon: function() { return this._rangedWeapon; },
 	getArmor: function (){ return this._armor; },
+	getAmmoSlot: function() { 
+		// Find the item that represents the ammo for our current ranged weapon
+		let ammoType = this._rangedWeapon.getAmmoType();
+		if (ammoType == 'magic') { return -2; }
+		// If there is one, and this creature has an inventory, find the index
+		// of the first stack in the inventory array that holds this type
+		if(ammoType && this.hasMixin('InventoryHolder')) { 
+			for (let i = 0; i < this._items.length; i++){
+				if (this._items[i].getName() == ammoType){
+					return i;
+				}
+			}
+			return -1;
+		}
+	},
 	unequip: function(item){
 		// Generic/helper function to call before getting rid of an item (dropping, destroying, etc.)
+		if (this._rangedWeapon === item) { this.unwieldRanged(); }
 		if (this._weapon === item) { this.unwield(); }
 		if (this._armor === item) { this.unwear(); }
 	}
 };
+
 
 // AI Mixins - 'Actor' group
 Game.EntityMixins.PlayerActor = {
@@ -564,7 +672,7 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 		if (targets.length) { target = map.getEntityAt(targets[0]); }
 		else if (subTargets.length) { target = map.getEntityAt(subTargets[0]); }
 		
-		if(target) console.log("Found (sub)target: " + target.getName());
+		// DEBUG if(target) console.log("Found (sub)target: " + target.getName());
 		else return false;	// No target found, move on to next priority action
 		
 		// Generate the path and move to the first tile

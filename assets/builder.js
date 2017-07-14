@@ -10,6 +10,7 @@ Game.Builder = function(width, height, depth){
 		// Create a new cave at each level
 		this._tiles[z] = this._generateLevel();
 		
+		
 		// Setup the regions array for each depth
 		this._regions[z] = new Array(width);
 		for (let x = 0; x < width; x++){
@@ -162,8 +163,7 @@ Game.Builder.prototype._findRegionOverlaps = function(z, r1, r2){
 		}
 	}
 	// Shuffle the list to prevent bias
-	//return matches.randomize();
-	return matches;
+	return matches.randomize();
 	
 	
 } // findRegionOverlaps()

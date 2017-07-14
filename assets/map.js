@@ -36,6 +36,7 @@ Game.Map = function(tiles, player){
 		for (let i = 0; i < 15; i++){
 			
 			let entity = Game.EntityRepository.createRandom()
+			// DEBUG console.log("Spawning "+ entity.getName());
 			this.addEntityAtRandomPosition(entity, z);
 			// Level up entities on lower floors
 			if (entity.hasMixin('ExperienceGainer')) {
@@ -45,13 +46,18 @@ Game.Map = function(tiles, player){
 			}
 		}
 		for (let i = 0; i < 10; i++){
-			this.addItemAtRandomPosition(Game.ItemRepository.createRandom(),z);
+			let newItem = Game.ItemRepository.createRandom();
+			// DEBUG console.log("Spawning an "+ newItem.getName());
+			this.addItemAtRandomPosition(newItem,z);
 		}
 	}
 	// Add one each of our weapons and armor
-	let templates = ['dagger', 'sword', 'staff', 'tunic', 'chainmail', 'platemail'];
+	let templates = ['dagger', 
+	//	'sword', 'quarterstaff', 'tunic',
+	//	'chainmail', 'platemail',
+		'Staff of Energy Bolt', 'sling'];
 	for (let i = 0; i < templates.length; i++){
-		this.addItemAtRandomPosition(Game.ItemRepository.create(templates[i]), Math.floor(this._depth * Math.random()));
+		this.addItemAtRandomPosition(Game.ItemRepository.create(templates[i]), 0);
 	}
 	
 	
@@ -123,15 +129,26 @@ Game.Map.prototype.setItemsAt = function(x, y, z, items){
 }
 
 Game.Map.prototype.addItem = function(key, item){
+		
 	// key = x + ',' + y + ',' + z - use getPos().str
 	if (this._items[key]){
-		this._items[key].push(item);
+		if(item.hasMixin('Stackable')){
+			for(let slot = 0; slot < this._items[key].length; slot++) {
+				if (this._items[key][slot] && (this._items[key][slot]._name == item._name)){
+					this._items[key][slot].incCount();
+				}
+			}
+		}
+		else {
+			this._items[key].push(item);
+		}
 	}else this._items[key] = [item];
 }
 
 Game.Map.prototype.addItemAtRandomPosition = function(item, z){
 	let pos = this.getRandomFloorPosition(z);
 	this.addItem(pos.str, item);
+	// DEBUG console.log(item._name + ' added at (' + pos.str + ')')
 }
 
 

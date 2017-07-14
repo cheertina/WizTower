@@ -3,10 +3,13 @@ Game.DynamicGlyph = function(properties){
 	properties = properties || {};
 	
 	// Call the glyph's constructor with our set of properties
+	// This constructor handles the following properties:
+	// character
+	// foreground color
+	// background color
 	Game.Glyph.call(this, properties);
 	
 	// Instantiate properties from the passed object
-	// This constructor should handle all properties that both Items and Entities have
 	this._name = properties['name'] || '';
 	
 	// Create an object which will keep track of the mixins
@@ -18,8 +21,8 @@ Game.DynamicGlyph = function(properties){
 	
 	// Set up the object's mixins
 	var mixins = properties['mixins'] || [];
+	// DEBUG console.log(this.getName() + " mixins: " + JSON.stringify(mixins));
 	for (let i = 0; i < mixins.length; i++) {
-		
 		// From each mixin, copy over all properties except
 		// the name and init properties.  We also make sure
 		// not to override any properties that already exist
@@ -103,7 +106,13 @@ Game.DynamicGlyph.prototype.setName = function(name){ this._name = name; }
 // Description variants
 
 Game.DynamicGlyph.prototype.describe = function() {
-	return this._name;
+	// DEBUG console.log('dynamicGlyph:108');
+	// DEBUG console.log(vsprintf("%s.hasMixin('Stackable')", "%s._stackCount", [this.getName(), this.getName()]));
+	// DEBUG console.log(this.hasMixin('Stackable'), (this._stackCount || "non-stack"));
+	if (this.hasMixin('Stackable') && this._stackCount > 1){
+		return vsprintf("pile of %d %ss", [this._stackCount, this._name]);
+	}
+		return this._name;
 };
 
 Game.DynamicGlyph.prototype.describeA = function(capital = false) {
