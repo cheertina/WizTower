@@ -26,7 +26,74 @@ Game.Map = function(tiles, player){
 	// Add the player
 	this._player = player;	// So AI's can get it
 	this.addEntityAtRandomPosition(player, 0);
-    
+    let altar = this.getRandomFloorPosition(0);
+	this.placeAltarAt(altar.x, altar.y, 0);
+	// Randomly spawn and place enemies and items
+	this.populate();
+	
+}; // Constructor
+
+// Standard getters
+Game.Map.prototype.getDepth = function() { return this._depth; };
+Game.Map.prototype.getWidth = function() { return this._width; };
+Game.Map.prototype.getHeight = function() { return this._height; };
+Game.Map.prototype.getEngine = function() { return this._engine; };
+Game.Map.prototype.getEntities = function() { return this._entities; };
+Game.Map.prototype.getPlayer = function() { return this._player; };
+
+// All chances are relative to total among all entries for a given level
+// We generate a random array with 'chance' copies of each name, then pick randomly from that array
+
+Game.Map.enemyAssign = {
+	level0: [{name: 'bat', chance: 2}, {name: 'newt', chance: 2}, {name: 'kobold', chance: 1}, {name: 'fungus', chance: 5}],
+	level1: [{name: 'bat', chance: 4}, {name: 'newt', chance: 4}, {name: 'kobold', chance: 2}, {name: 'fungus', chance: 2}],
+	level2: [{name: 'bat', chance: 3}, {name: 'newt', chance: 3}, {name: 'kobold', chance: 3}, {name: 'fungus', chance: 1}],
+	level3: [{name: 'bat', chance: 3}, {name: 'newt', chance: 3}, {name: 'kobold', chance: 4}, {name: 'fungus', chance: 1}],
+	level4: [{name: 'bat', chance: 3}, {name: 'newt', chance: 3}, {name: 'kobold', chance: 5}, {name: 'fungus', chance: 1}],
+	other: [{name: 'kobold', chance: 1}]
+	
+};
+
+// Map setup, random spawners, etc.
+Game.Map.prototype.placeAltarAt = function(x, y, z){
+	if(this.isEmptyFloor(x,y,z)){
+		this._tiles[z][x][y] = Game.Tile.altarTile;
+	}
+	console.log ()
+	return false;
+}
+
+Game.Map.prototype.populate = function(){
+	for (let z = 0; z < this._depth; z++){
+		// Generate an array of monster names based on their relative chances (given by the enemyAssign object)
+		// Shuffle the array, then choose random entries from it
+		let levelRndArr = [];
+		let lvlStr = '';
+		if (Game.Map.enemyAssign.hasOwnProperty('level'+z)) { lvlStr = 'level'+z; } else { lvlStr = 'other'; }
+		for (let i = 0; i < Game.Map.enemyAssign[lvlStr].length; i++ ){
+			let entry = Game.Map.enemyAssign[lvlStr][i];
+			for (let j = 0; j < entry.chance; j++){
+				levelRndArr.push(entry.name);
+			}
+		levelRndArr = levelRndArr.randomize();
+		}
+		
+		// DEBUG console.log("Level "+z+" monster array: " + JSON.stringify(levelRndArr));
+		
+		for (let i = 0; i < 15; i++){
+			let rndNum = Math.floor(Math.random() * levelRndArr.length)
+			let nameStr = levelRndArr[rndNum];
+			console.log(rndNum, nameStr);
+			this.addEntityAtRandomPosition(Game.EntityRepository.create(nameStr), z);
+		}
+		
+		
+		
+		
+	}
+}
+
+Game.Map.prototype.simplePopulate = function() {
 	// Put a newt spawner on the first floor, just for testing
 	this.addEntityAtRandomPosition(Game.EntityRepository.create('newtNest'), 0);
 	
@@ -36,7 +103,6 @@ Game.Map = function(tiles, player){
 		for (let i = 0; i < 15; i++){
 			
 			let entity = Game.EntityRepository.createRandom()
-			// DEBUG console.log("Spawning "+ entity.getName());
 			this.addEntityAtRandomPosition(entity, z);
 			// Level up entities on lower floors
 			if (entity.hasMixin('ExperienceGainer')) {
@@ -47,7 +113,6 @@ Game.Map = function(tiles, player){
 		}
 		for (let i = 0; i < 10; i++){
 			let newItem = Game.ItemRepository.createRandom();
-			// DEBUG console.log("Spawning an "+ newItem.getName());
 			this.addItemAtRandomPosition(newItem,z);
 		}
 	}
@@ -60,16 +125,9 @@ Game.Map = function(tiles, player){
 		this.addItemAtRandomPosition(Game.ItemRepository.create(templates[i]), 0);
 	}
 	
-	
-}; // Constructor
+};
 
-// Standard getters
-Game.Map.prototype.getDepth = function() { return this._depth; };
-Game.Map.prototype.getWidth = function() { return this._width; };
-Game.Map.prototype.getHeight = function() { return this._height; };
-Game.Map.prototype.getEngine = function() { return this._engine; };
-Game.Map.prototype.getEntities = function() { return this._entities; };
-Game.Map.prototype.getPlayer = function() { return this._player; }
+
 
 // Tile/Location
 Game.Map.prototype.getTile = function (x, y, z) {

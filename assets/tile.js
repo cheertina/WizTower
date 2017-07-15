@@ -71,9 +71,9 @@ Game.Tile.stairsDownTile = new Game.Tile({
 });
 
 
-Game.Tile.altar = new Game.Tile({
+Game.Tile.altarTile = new Game.Tile({
 	name: 'altar',
-	character: 'O',
+	character: ['0','|'],
 	foreground: 'gray',
 	walkable: true,
 	blocksLight: false

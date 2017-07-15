@@ -327,6 +327,7 @@ Game.Screen.playScreen = {
 					case ROT.VK_NUMPAD7: {this.cursorMove(-1, -1); break; }
 					case ROT.VK_NUMPAD8: {this.cursorMove( 0, -1); break; }
 					case ROT.VK_NUMPAD9: {this.cursorMove( 1, -1); break; }
+					case ROT.VK_ESCAPE: { this._mode = 'play'; }
 				}
 				Game.refresh();
 				return;
