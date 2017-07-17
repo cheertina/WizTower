@@ -365,30 +365,13 @@ Game.EntityMixins.PlayerStatGainer = {
 	}
 };
 
-// Magic-related
+// Magic
 Game.EntityMixins.MagicUser = {
 	name: 'MagicUser',
 	init: function(template){
-		// copy values from template or set defaults
-		_mana = template['mana'] || {
-			white: 0,
-			black: 0,
-			green: 0,
-			blue:  0,
-			red:   0
-		};
-		_maxMana = template['maxMana'] || {
-			white: 0,
-			black: 0,
-			green: 0,
-			blue:  0,
-			red:   0
-		};
-		
-		_spells = [];
+		this._magic = new Game.Magic();
 	}
 };
-
 
 
 // Item-related

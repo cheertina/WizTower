@@ -59,6 +59,10 @@ Game.DynamicGlyph.prototype.addMixin = function(mix){
 	if(mix.groupName) {
 		this._attachedMixinGroups[mix.groupName] = true;
 	}
+	// This should only be necessary for mixins
+	// that are added after creation
+	if(!properties) {var properties = {}} 
+	
 	// Finally, call the init function if it exists
 	if(mix.init) {
 		mix.init.call(this, properties);

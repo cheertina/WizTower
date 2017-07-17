@@ -148,14 +148,15 @@ Game.Screen.playScreen = {
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
 			for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
 				// Render all tiles that have ever been seen
-				if(map.isExplored(x, y, currentDepth)){
+				if(true || map.isExplored(x, y, currentDepth)){
 					// Fetch the glyph for the tile 
 					let glyph = this._map.getTile(x, y, currentDepth);
 					let foreground = glyph.getForeground();
 					
 					// If the cell is currently visible, see if there are
 					// items or entities to render instead of the tile glyph
-					if(visibleCells[x + ',' + y]){
+					
+					if(true || visibleCells[x + ',' + y]){
 						
 						// Check  for items first, so that entities will render
 						// "on top" of them
@@ -359,21 +360,6 @@ Game.Screen.playScreen = {
 				//  Now with unnecessary (optional) braces, for nice folding
 				
 				// DEBUG COMMANDS
-				case ROT.VK_R:{ //Ranged attack testing
-					if(!this._player.getRangedWeapon()){
-						Game.sendMessage(this._player, "You're not wielding a ranged weapon");
-						Game.refresh();
-						return;
-					}
-					if(this._player.getAmmoSlot() == -1){	// getAmmoSlot returns an array index or -1 if no ammo
-						Game.sendMessage(this._player, "You don't have any ammo for that");
-						Game.refresh();
-						return;
-					}
-					this._mode = 'target';
-					Game.refresh();
-					return;
-				}
 				case ROT.VK_N:{
 					this._player.addMixin(Game.EntityMixins.Digger); 
 					return; 
@@ -386,8 +372,20 @@ Game.Screen.playScreen = {
 				//
 				// END DEBUG
 				
+				// Testing Commands
 				
-				// Non-debug commands
+				case ROT.VK_P:{
+					let pos = this._player.getPos();
+					let tile = this._map.getTile(pos.x, pos.y, pos.z);
+					if(tile.getName() == 'altar' && tile.isActive() == false){	// if we're on an unactivated altar
+						Game.Screen.gainMagic.setup(this._player, pos, tile);
+						this.setSubScreen(Game.Screen.gainMagic);
+					}
+						return;
+				}
+				// End testing
+				
+				// Working Commands
 				// DROP ITEM
 				case ROT.VK_D: {
 					this.showItemsSubScreen(Game.Screen.dropScreen , this._player.getItems(), "You're not carrying anything to drop.");
@@ -406,6 +404,22 @@ Game.Screen.playScreen = {
 				// LOOK
 				case ROT.VK_L: {
 					this._mode = 'look';
+					Game.refresh();
+					return;
+				}
+				// RANGED ATTACK
+				case ROT.VK_R:{ 
+					if(!this._player.getRangedWeapon()){
+						Game.sendMessage(this._player, "You're not wielding a ranged weapon");
+						Game.refresh();
+						return;
+					}
+					if(this._player.getAmmoSlot() == -1){	// getAmmoSlot returns an array index or -1 if no ammo
+						Game.sendMessage(this._player, "You don't have any ammo for that");
+						Game.refresh();
+						return;
+					}
+					this._mode = 'target';
 					Game.refresh();
 					return;
 				}
@@ -577,6 +591,81 @@ Game.Screen.gainStatScreen = {
 			}
 		}
 	}
+};
+
+// Magic stat gain
+Game.Screen.gainMagic = {
+	setup: function(entity, pos, tile) {
+		// Must be called before rendering
+		this._entity = entity;
+		this._pos = pos;
+		this._tile = tile;
+	},
+	render: function(display){
+		display.drawText(0,0, "Channel which color mana?");
+	
+		display.drawText(0, 2, "W - White", 'white');
+		display.drawText(0, 4, "B - Black", 'black', 'grey');
+		display.drawText(0, 6, "G - Green", 'green');
+		display.drawText(0, 8, "U - Blue",  'blue' );
+		display.drawText(0, 10,"R - Red",   'red'  );
+		
+	},
+	handleInput: function(inputType, inputData){
+		if (inputType === 'keydown'){
+			let activated = false;
+			let actColor = '';
+			switch(inputData.keyCode){
+				
+				case ROT.VK_W:{
+					activated = true;
+					actColor = 'white';
+					break;
+				}
+				case ROT.VK_B:{
+					activated = true;
+					actColor = 'black';
+					break;
+				}
+				case ROT.VK_G:{
+					activated = true;
+					actColor = 'green';
+					break;
+				}
+				case ROT.VK_U:{
+					activated = true;
+					actColor = 'blue';
+					break;
+				}
+				case ROT.VK_R:{
+					activated = true;
+					actColor = 'red';
+					break;
+				}
+				
+				case ROT.VK_ESCAPE:{
+					Game.Screen.playScreen.setSubScreen(undefined);
+					break;
+				}
+				
+				default: 
+				console.log(JSON.stringify(this._entity._magic));
+				return;
+				
+			}
+				
+			if (activated){
+				this._entity._magic.increaseMaxMana(actColor);
+				Game.Screen.playScreen.setSubScreen(undefined);
+				this._tile._active = true;
+				this._tile._foreground = actColor;
+				if(actColor == 'black'){ this.tile._background = 'gray'};
+			
+			}
+			
+		}
+	}
+	
 };
 
 // An Item list based on template for different use cases

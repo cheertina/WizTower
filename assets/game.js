@@ -64,7 +64,6 @@ var Game =  {
         }
     }	// switchScreen
 	
-	
 };
 
 window.onload = function() {

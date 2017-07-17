@@ -10,14 +10,18 @@ Game.Tile = function(properties){
 	this._diggable = properties['diggable'] || false;
 	this._blocksLight = properties['blocksLight'] !== undefined ? properties['blocksLight'] : true;
 	
+	// We're ok with this being undefined instead of having a default value
+	this._active = properties['active'];
 };
 // Make tiles inherit all the functionality from glyphs
 
 Game.Tile.extend(Game.Glyph);
 
+Game.Tile.prototype.getName = function(){ return this._name; }
 Game.Tile.prototype.isWalkable = function(){ return this._walkable; }
 Game.Tile.prototype.isDiggable = function(){ return this._diggable; }
 Game.Tile.prototype.isBlockingLight = function(){ return this._blocksLight; }
+Game.Tile.prototype.isActive = function(){ return this._active; }
 
 // Helper function
 Game.getNeighborPositions = function(x, y) {
@@ -73,8 +77,9 @@ Game.Tile.stairsDownTile = new Game.Tile({
 
 Game.Tile.altarTile = new Game.Tile({
 	name: 'altar',
-	character: ['0','|'],
+	character: [String.fromCharCode(928)],
 	foreground: 'gray',
+	active: false,
 	walkable: true,
 	blocksLight: false
 });

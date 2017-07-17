@@ -20,6 +20,7 @@ Game.PlayerTemplate = {
 		Game.EntityMixins.Equipper,
 		Game.EntityMixins.Attacker,
 		Game.EntityMixins.Destructible,
+		Game.EntityMixins.MagicUser,
 		Game.EntityMixins.ExperienceGainer]
 }; // Player Template
 

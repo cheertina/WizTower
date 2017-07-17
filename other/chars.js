@@ -26,8 +26,9 @@ var Game =  {
 Game.drawStuff = function(){
 	let display = this._display;
 	let things = [
-		{chr: ['O', '|']},
-		{chr: ['/', '|', '\\']}
+		{chr: [String.fromCharCode(55)]},
+		{chr: [String.fromCharCode(127)]},
+		{chr: [String.fromCharCode(225)]}
 	];
 	
 	for (let i = 0; i < things.length; i++){
@@ -42,6 +43,23 @@ Game.drawStuff = function(){
 		display.draw(9, i, chr, 'black', 'gray ');
 		display.draw(11, i, chr,'red',   'black');
 	}
+};
+
+Game.drawStuff2 = function(){
+	for (let i = 0; i < 16; i++){
+		for (let j = 0; j < 64; j++){
+			this._display.draw(j,i, String.fromCharCode(64*i + j), 'white');
+		}
+		this._display.drawText(65, i, vsprintf("%s - %s", [i*64,(i+1)*64]));
+	}
+	for (let j = 0; j < 64; j++){
+		if(j%2 == 0){
+			this._display.draw(j, 16, '|');
+		}
+		if(j%4 == 0){
+			this._display.draw(j, 18, j);
+		}
+	}
 }
 
 window.onload = function() {
@@ -54,6 +72,6 @@ window.onload = function() {
         // Add the container to our HTML page
         document.body.appendChild(Game.getDisplay().getContainer());
     }
-	Game.drawStuff();
+	Game.drawStuff2();
 };
 
