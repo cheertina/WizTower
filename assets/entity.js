@@ -13,6 +13,9 @@ Game.Entity = function(properties){
 	this._z = properties['z'] || 0;
 	this._team = properties['team'] || 'monster';
 	this._map = null;
+	this._buffs = {
+		//lame: {effect: function(){console.log('lalala');}}	// Sample once-per-turn effect
+	};
 	
 };	// Constructor
 
@@ -92,6 +95,19 @@ Game.Entity.prototype.kill = function(message) {
 	}
 };
 
+Game.Entity.prototype.resolveBuffs = function(){
+	// TODO: Actually do stuff with the buffs
+	// each buff is a key in the _buffs object, and the value that goes with it is another object
+	// the actual buff object should have an effect() function if it provides a aonce-per-turn benefit (regen, DoT, etc)
+	// it should also be able to have other values if it provides a passive benefit that does not relate to the turn (armor buff, sight radius)
+	// Some will also add and remove mixins when cast/dispelled - we will need to handle that as well
+	
+	for (key in this._buffs){
+		if(this._buffs[key].hasOwnProperty('effect')) { this._buffs[key].effect(); }
+	}
+		
+	return true;
+}
 
 // Getters & Setters
 Game.Entity.prototype.getX     = function(){ return this._x; };

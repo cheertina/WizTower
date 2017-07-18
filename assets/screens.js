@@ -377,11 +377,11 @@ Game.Screen.playScreen = {
 				case ROT.VK_P:{
 					let pos = this._player.getPos();
 					let tile = this._map.getTile(pos.x, pos.y, pos.z);
-					if(tile.getName() == 'altar' && tile.isActive() == false){	// if we're on an unactivated altar
-						Game.Screen.gainMagic.setup(this._player, pos, tile);
-						this.setSubScreen(Game.Screen.gainMagic);
-					}
-						return;
+					let onAltar = (tile.getName() == 'altar' && tile.isActive() == false)	// if we're on an unactivated altar
+					Game.Screen.gainMagic.setup(this._player, pos, tile, onAltar);
+					this.setSubScreen(Game.Screen.gainMagic);
+	
+					return;
 				}
 				// End testing
 				
@@ -595,23 +595,29 @@ Game.Screen.gainStatScreen = {
 
 // Magic stat gain
 Game.Screen.gainMagic = {
-	setup: function(entity, pos, tile) {
+	setup: function(entity, pos, tile, onAltar) {
 		// Must be called before rendering
 		this._entity = entity;
 		this._pos = pos;
 		this._tile = tile;
+		this._onAltar = onAltar;
 	},
 	render: function(display){
 		display.drawText(0,0, "Channel which color mana?");
 	
-		display.drawText(0, 2, "W - White", 'white');
-		display.drawText(0, 4, "B - Black", 'black', 'grey');
-		display.drawText(0, 6, "G - Green", 'green');
-		display.drawText(0, 8, "U - Blue",  'blue' );
-		display.drawText(0, 10,"R - Red",   'red'  );
+		display.drawText(0, 2, "W - White - " + this._entity._magic.maxMana['white'], 'white');
+		display.drawText(0, 4, "B - Black - " + this._entity._magic.maxMana['black'], 'black', 'grey');
+		display.drawText(0, 6, "G - Green - " + this._entity._magic.maxMana['green'], 'green');
+		display.drawText(0, 8, "U - Blue - " +  this._entity._magic.maxMana['blue'], 'blue' );
+		display.drawText(0, 10,"R - Red - " +   this._entity._magic.maxMana['red'], 'red'  );
 		
 	},
 	handleInput: function(inputType, inputData){
+		if (!this._onAltar && inputType == 'keydown'){
+			Game.Screen.playScreen.setSubScreen(undefined);
+			Game.refresh();
+			return;
+		}
 		if (inputType === 'keydown'){
 			let activated = false;
 			let actColor = '';
@@ -659,7 +665,7 @@ Game.Screen.gainMagic = {
 				Game.Screen.playScreen.setSubScreen(undefined);
 				this._tile._active = true;
 				this._tile._foreground = actColor;
-				if(actColor == 'black'){ this.tile._background = 'gray'};
+				if(actColor == 'black'){ this._tile._background = 'gray'};
 			
 			}
 			

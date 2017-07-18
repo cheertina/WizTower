@@ -539,6 +539,8 @@ Game.EntityMixins.Equipper = {
 
 
 // AI Mixins - 'Actor' group
+// All of these need an act() - this is what the engine calls on the entity's turn
+// That act() should call this.resolveBuffs()
 Game.EntityMixins.PlayerActor = {
 // Main player's actor mixin
 	name: 'PlayerActor',
@@ -548,6 +550,8 @@ Game.EntityMixins.PlayerActor = {
 		// so bail out if we're already dead
 		if (this._acting) { return; }
 		this._acting = true;
+		
+		this.resolveBuffs();
 		
 		this.addTurnHunger();
 		// Detect if the game is over
@@ -577,6 +581,7 @@ Game.EntityMixins.TurnSpawnActor = {
 		this._turnCounter = 0;
 	},
 	act: function(){
+		this.resolveBuffs();
 		if (this._spawnRate < 1) this._spawnRate = 1;	// In case we ever let this change and get below 1 somehow
 		if (this._turnCounter == this._spawnRate){
 			this.spawn();
@@ -595,6 +600,7 @@ Game.EntityMixins.RngSpawnActor = {	// For rng-based spawn rate
 		this._spawnChance = template['spawnChance'] || .02
 	},
 	act: function(){
+		this.resolveBuffs();
 		if(Math.random() <= this._spawnChance){ // 2% chance to spread
 			this.spawn();
 		}
@@ -609,6 +615,7 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 		this._tasks = template['tasks'] || ['wander'];
 	},
 	act: function(){
+		this.resolveBuffs();
 		// Prioritize tasks until one can be acted on
 		// We factored out the pre-test.  Now we attempt the action and return false
 		// if it is impossible - no targets in range, whatever.  Keep trying in order until something succeeds
