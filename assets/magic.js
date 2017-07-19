@@ -79,8 +79,7 @@ Game.Spell = function(properties){
 	
 	this._onCast = properties['onCast']     || undefined;
 	this._buff = properties['buff'] || {};
-	this._duration = properties['duration']       || -1;
-
+	
 	this._bonus = properties['bonus']       || {};
 };
 
@@ -89,7 +88,6 @@ Game.SpellBook = new Game.Repository('spells', Game.Spell);
 Game.SpellBook.define('test', {
 	name: 'test',
 	manaCost: { green: 2 },
-	duration: 10,
 	onCast: function(target){
 		console.log(target.getName() + ' - onCast()');		
 	},
