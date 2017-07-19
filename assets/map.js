@@ -59,7 +59,6 @@ Game.Map.prototype.placeAltarAt = function(x, y, z){
 	if(this.isEmptyFloor(x,y,z)){
 		this._tiles[z][x][y] = Game.Tile.altarTile;
 	}
-	console.log ()
 	return false;
 }
 
@@ -83,7 +82,7 @@ Game.Map.prototype.populate = function(){
 		for (let i = 0; i < 15; i++){
 			let rndNum = Math.floor(Math.random() * levelRndArr.length)
 			let nameStr = levelRndArr[rndNum];
-			console.log(rndNum, nameStr);
+			// DEBUG console.log(rndNum, nameStr);
 			this.addEntityAtRandomPosition(Game.EntityRepository.create(nameStr), z);
 		}
 		

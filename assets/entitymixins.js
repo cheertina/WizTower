@@ -192,7 +192,7 @@ Game.EntityMixins.MessageRecipient = { // Entity is able to receive messages - s
 };
 
 Game.EntityMixins.Digger = { // Entity can dig walls
-	name: 'Digger',
+	name: 'Digger'
 }
 
 Game.EntityMixins.Sight = { // Signifies that our entity posseses a field of vision in a radius
@@ -292,6 +292,10 @@ Game.EntityMixins.CorpseDropper = { // Entity can drop a corpse when killed
 	}
 }
 
+Game.EntityMixins.Trample = {	// This entity can move into an occupied space if the attack kills the occupier
+	name: 'Trample'
+};
+
 
 // XP, Levels, and Stats
 Game.EntityMixins.ExperienceGainer = {
@@ -369,7 +373,42 @@ Game.EntityMixins.PlayerStatGainer = {
 Game.EntityMixins.MagicUser = {
 	name: 'MagicUser',
 	init: function(template){
-		this._magic = new Game.Magic();
+		var entity = this;
+		entity._magic = new Game.Magic();
+		entity._buffs['manaRegen'] = { 
+			turnCount: { white: 0, black: 0, green: 0, blue: 0, red: 0 },
+			duration: -1,
+			perTurn: function(){
+				for (color in this.turnCount){
+					// If any color has less than full mana, restore 1 per 10 turns
+					// These are on independant timers, one per color
+					if (entity._magic.mana[color] < entity._magic.maxMana[color]){
+						this.turnCount[color]++;
+						if(this.turnCount[color] >= 10){
+							this.turnCount[color] = 0;
+							entity._magic.mana[color]++;
+						}
+					} else {
+						this.turnCount[color] = 0;
+					}
+				}
+				
+			}			
+		};
+	},
+	castSpell: function(name, target){
+		if (!this._magic.spellbook.hasOwnProperty(name)) { console.log("nope! - entitymixins.js 400"); return; }
+		
+		// TODO: check for mana
+		
+		
+		this._magic.spellbook[name]._onCast(target);
+		
+		
+		if (this._magic.spellbook[name]._buff != {}){
+			target._buffs[name] = this._magic.spellbook[name].buff;
+		}
+		
 	}
 };
 

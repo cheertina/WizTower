@@ -2,6 +2,14 @@ Game.Entity = function(properties){
 	
 	properties = properties || {};
 	
+	// Is this even legal?
+	// Yes, and it seems to do what I wanted, too
+	// The DynamicGlyph constructor is where Mixins are added to the object
+	// Some of those mixins require access to the _buffs object
+	// So we add that to the entity before we get around to calling the DG constructor
+	
+	this._buffs = {};
+	
 	// Call the glyph's constructor with our set of properties
 	Game.DynamicGlyph.call(this, properties);
 	
@@ -13,9 +21,6 @@ Game.Entity = function(properties){
 	this._z = properties['z'] || 0;
 	this._team = properties['team'] || 'monster';
 	this._map = null;
-	this._buffs = {
-		//lame: {effect: function(){console.log('lalala');}}	// Sample once-per-turn effect
-	};
 	
 };	// Constructor
 
@@ -48,7 +53,19 @@ Game.Entity.prototype.tryMove = function(x, y, z) {
 		// Default to 'monster' for all non-player entities
 		if(this.hasMixin('Attacker') && (this._team !== target._team)){
 			this.attack(target);
-			return true;
+			
+			// See if there's stlll something there
+			target = map.getEntityAt(x, y, this.getZ());
+			
+			// if that target still exists or if we don't have trample, we're done - return true
+			if(!this.hasMixin('Trample') || target) {
+				return true;
+			}
+			else{   // We _do_ have trample and no target (because we killed it)
+					// Therefore we will send a message and continue on to the "movement"
+					// part of the tryMove() function
+				Game.sendMessage(this, "You trample your victim.");
+			}
 		} else {
 			// If not, nothing we can do, and we can't move
 			// onto the tile
@@ -98,12 +115,21 @@ Game.Entity.prototype.kill = function(message) {
 Game.Entity.prototype.resolveBuffs = function(){
 	// TODO: Actually do stuff with the buffs
 	// each buff is a key in the _buffs object, and the value that goes with it is another object
-	// the actual buff object should have an effect() function if it provides a aonce-per-turn benefit (regen, DoT, etc)
+	// the actual buff object should have an effect() function if it provides a once-per-turn benefit (regen, DoT, etc)
 	// it should also be able to have other values if it provides a passive benefit that does not relate to the turn (armor buff, sight radius)
-	// Some will also add and remove mixins when cast/dispelled - we will need to handle that as well
+	// Some will also add and remove mixins when cast/expiring - we will need to handle that as well
 	
 	for (key in this._buffs){
-		if(this._buffs[key].hasOwnProperty('effect')) { this._buffs[key].effect(); }
+		if(this._buffs[key].hasOwnProperty('perTurn')) { 
+			this._buffs[key].perTurn();
+			if (this._buffs[key].duration > 0){
+				this._buffs[key].duration--;
+			}
+			if (this._buffs[key].duration == 0){
+				this._buffs[key].onExpire();
+				delete this._buffs[key];
+			}
+		}
 	}
 		
 	return true;

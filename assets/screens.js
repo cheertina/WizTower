@@ -93,6 +93,7 @@ Game.Screen.playScreen = {
 		// Start the map's engine
 		this._map.getEngine().start();
 		
+		this._player._magic.spellbook['test'] = Game.SpellBook.create('test');
 		
 	},//enter()
     
@@ -218,6 +219,7 @@ Game.Screen.playScreen = {
 		// STATUS RENDER
 		// In play mode, show stats.  In look mode, show other things
 		if(this._mode == 'play'){
+			// Stats, row 1
 			let status1_1 = vsprintf('HP: %d/%d   (%d, %d)',
 				[this._player.getHp(), this._player.getMaxHp(),
 				this._player.getX(), this._player.getY()]);
@@ -229,11 +231,26 @@ Game.Screen.playScreen = {
 			display.drawText(24, screenHeight, '%c{white}%b{black}' + status1_2); // this hits row 1 of 2 blank at the bottom
 			// NOTE: screenHeight-1 is the last row of the playing field
 			
+			// Stats, row 2
 			let status2_1 = vsprintf('Level: %d, XP: %d', [this._player.getLevel(), this._player.getXp()]);
 			display.drawText(0, screenHeight+1, '%c{white}%b{black}' + status2_1);
 			// show hunger in row two, right side
 			let hungerState = this._player.getHungerState(false);	// use true for numeric debug. turn counting
 			display.drawText(screenWidth - hungerState.length, screenHeight+1, '%c{white}%b{black}' + hungerState);
+		
+			// Stats, row 3 - mana
+			let status3_1 = vsprintf('White %d/%d', [this._player._magic.mana.white, this._player._magic.maxMana.white]);
+			let status3_2 = vsprintf('Black %d/%d', [this._player._magic.mana.black, this._player._magic.maxMana.black]);
+			let status3_3 = vsprintf('Green %d/%d', [this._player._magic.mana.green, this._player._magic.maxMana.green]);
+			let status3_4 = vsprintf('Blue %d/%d', [this._player._magic.mana.blue, this._player._magic.maxMana.blue]);
+			let status3_5 = vsprintf('Red %d/%d', [this._player._magic.mana.red, this._player._magic.maxMana.red]);
+			display.drawText( 0, screenHeight+2, "%c{white}%b{black}"+status3_1);
+			display.drawText(15, screenHeight+2, "%c{black}%b{gray}" +status3_2);
+			display.drawText(30, screenHeight+2, "%c{lime}%b{black}" +status3_3);
+			display.drawText(45, screenHeight+2, "%c{cyan}%b{black}" +status3_4);
+			display.drawText(60, screenHeight+2, "%c{red}%b{black}"  +status3_5);
+		
+		
 		} 
 		if (this._mode == 'look' || this._mode == 'target') { // In either 'look' or 'target' mode, show what's under the cursor
 			let lookText = '';
@@ -360,13 +377,25 @@ Game.Screen.playScreen = {
 				//  Now with unnecessary (optional) braces, for nice folding
 				
 				// DEBUG COMMANDS
-				case ROT.VK_N:{
-					this._player.addMixin(Game.EntityMixins.Digger); 
+				
+				case ROT.VK_N:{ // Let's plow through stuff like walls and enemies
+					if (inputData.shiftKey) { 
+						this._player.removeMixin(Game.EntityMixins.Digger);
+						this._player.removeMixin(Game.EntityMixins.Trample);
+					}
+					else{
+						this._player.addMixin(Game.EntityMixins.Digger); 
+						this._player.addMixin(Game.EntityMixins.Trample); 
+					} 
 					return; 
 				}
 				
-				case ROT.VK_M:{
-					this._player.removeMixin(Game.EntityMixins.Digger);
+				case ROT.VK_C:{
+					if (inputData.shiftKey) { 
+					}
+					else{
+						this._player.castSpell('test', this._player);
+					} 
 					return;
 				}
 				//
@@ -377,9 +406,10 @@ Game.Screen.playScreen = {
 				case ROT.VK_P:{
 					let pos = this._player.getPos();
 					let tile = this._map.getTile(pos.x, pos.y, pos.z);
-					let onAltar = (tile.getName() == 'altar' && tile.isActive() == false)	// if we're on an unactivated altar
-					Game.Screen.gainMagic.setup(this._player, pos, tile, onAltar);
-					this.setSubScreen(Game.Screen.gainMagic);
+					if (tile.getName() == 'altar' && tile.isActive() == false){ // if we're on an unactivated altar
+						Game.Screen.gainMagic.setup(this._player, pos, tile);
+						this.setSubScreen(Game.Screen.gainMagic);
+					}
 	
 					return;
 				}
@@ -594,30 +624,24 @@ Game.Screen.gainStatScreen = {
 };
 
 // Magic stat gain
+// If not an an altar, shows current magic stats
 Game.Screen.gainMagic = {
-	setup: function(entity, pos, tile, onAltar) {
+	setup: function(entity, pos, tile) {
 		// Must be called before rendering
 		this._entity = entity;
 		this._pos = pos;
 		this._tile = tile;
-		this._onAltar = onAltar;
 	},
 	render: function(display){
-		display.drawText(0,0, "Channel which color mana?");
-	
-		display.drawText(0, 2, "W - White - " + this._entity._magic.maxMana['white'], 'white');
-		display.drawText(0, 4, "B - Black - " + this._entity._magic.maxMana['black'], 'black', 'grey');
-		display.drawText(0, 6, "G - Green - " + this._entity._magic.maxMana['green'], 'green');
-		display.drawText(0, 8, "U - Blue - " +  this._entity._magic.maxMana['blue'], 'blue' );
-		display.drawText(0, 10,"R - Red - " +   this._entity._magic.maxMana['red'], 'red'  );
+		display.drawText(0, 0, "Channel which color mana?");
+		display.drawText(0, 2, "%c{white}%b{black}W - White - " + this._entity._magic.mana['white'] + "/" + this._entity._magic.maxMana['white']);
+		display.drawText(0, 4, "%c{black}%b{gray}B - Black - " + this._entity._magic.mana['black'] + "/" + this._entity._magic.maxMana['black']);
+		display.drawText(0, 6, "%c{lime}%b{black}G - Green - " + this._entity._magic.mana['green'] + "/" + this._entity._magic.maxMana['green']);
+		display.drawText(0, 8, "%c{cyan}%b{black}U - Blue - "  + this._entity._magic.mana['blue']  + "/" + this._entity._magic.maxMana['blue'] );
+		display.drawText(0, 10,"%c{red}%b{black}R - Red - "   + this._entity._magic.mana['red']   + "/" + this._entity._magic.maxMana['red']  );
 		
 	},
 	handleInput: function(inputType, inputData){
-		if (!this._onAltar && inputType == 'keydown'){
-			Game.Screen.playScreen.setSubScreen(undefined);
-			Game.refresh();
-			return;
-		}
 		if (inputType === 'keydown'){
 			let activated = false;
 			let actColor = '';
@@ -664,9 +688,11 @@ Game.Screen.gainMagic = {
 				this._entity._magic.increaseMaxMana(actColor);
 				Game.Screen.playScreen.setSubScreen(undefined);
 				this._tile._active = true;
-				this._tile._foreground = actColor;
 				if(actColor == 'black'){ this._tile._background = 'gray'};
 			
+				if(actColor == 'green') { this._tile._foreground = 'lime'; }
+				else if(actColor == 'blue') { this._tile._foreground = 'cyan'; }
+				else { this._tile._foreground = actColor; }
 			}
 			
 		}

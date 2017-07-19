@@ -10,7 +10,7 @@ var Game =  {
 		var displayOptions = {
 			fontSize: 28,
 			width: this._screenWidth,
-            height: this._screenHeight + 2 // 2 extra rows for stats display
+            height: this._screenHeight + 3 // extra rows for stats display
 		};
         this._display = new ROT.Display(displayOptions);
 		
