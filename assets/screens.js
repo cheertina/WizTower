@@ -93,7 +93,7 @@ Game.Screen.playScreen = {
 		// Start the map's engine
 		this._map.getEngine().start();
 		
-		this._player._magic.spellbook['test'] = Game.SpellBook.create('test');
+		this._player._magic.spellbook['regen'] = true;
 		
 	},//enter()
     
@@ -359,7 +359,7 @@ Game.Screen.playScreen = {
 				case ROT.VK_NUMPAD2: this.move( 0,  1, 0); break;
 				case ROT.VK_NUMPAD3: this.move( 1,  1, 0); break;
 				case ROT.VK_NUMPAD4: this.move(-1,  0, 0); break;
-				case ROT.VK_NUMPAD5: break; 	// Spend a turn to do nothing - wait
+				case ROT.VK_NUMPAD5: this._player.heal(-1); break; 	// Spend a turn to do nothing - wait
 				case ROT.VK_NUMPAD6: this.move( 1,  0, 0); break;
 				case ROT.VK_NUMPAD7: this.move(-1, -1, 0); break;
 				case ROT.VK_NUMPAD8: this.move( 0, -1, 0); break;
@@ -394,7 +394,8 @@ Game.Screen.playScreen = {
 					if (inputData.shiftKey) { 
 					}
 					else{
-						this._player.castSpell('test', this._player);
+						this._player.castSpell('regen', this._player);
+						break;
 					} 
 					return;
 				}

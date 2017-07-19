@@ -29,7 +29,7 @@ Game.Map = function(tiles, player){
     let altar = this.getRandomFloorPosition(0);
 	this.placeAltarAt(altar.x, altar.y, 0);
 	// Randomly spawn and place enemies and items
-	this.populate();
+	//this.populate();
 	
 }; // Constructor
 

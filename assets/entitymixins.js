@@ -396,18 +396,34 @@ Game.EntityMixins.MagicUser = {
 			}			
 		};
 	},
-	castSpell: function(name, target){
-		if (!this._magic.spellbook.hasOwnProperty(name)) { console.log("nope! - entitymixins.js 400"); return; }
+	castSpell: function(spellName, target){
+		// Do we know that spell?
+		if (!this._magic.spellbook.hasOwnProperty(spellName)) { console.log("nope! - entitymixins.js 400"); return; }
+		let spell = Game.SpellBook.create(spellName);
 		
-		// TODO: check for mana
-		
-		
-		this._magic.spellbook[name]._onCast(target);
-		
-		
-		if (this._magic.spellbook[name]._buff != {}){
-			target._buffs[name] = this._magic.spellbook[name].buff;
+		// Do we have the mana?
+		for (color in spell._manaCost){
+			if (this._magic.mana[color] < spell._manaCost[color]){
+				console.log("Note enough mana");
+				Game.sendMessage(this, "You don't have enough mana!");
+				Game.refresh();
+				return;
+			} else {
+				this._magic.mana[color] -= spell._manaCost[color];
+			}
 		}
+		
+		spell._onCast(target);
+		
+		
+		let newBuff = new spell._buff(target);
+		
+		// this completely overwrites old versions
+		target._buffs[spellName] = newBuff;
+		castMsg = vsprintf("You cast %s on %s", 
+		[spellName, (target.getName() == 'you' ? 'yourself' : target.getName())])
+		Game.sendMessage(this, castMsg);
+		//Game.refresh();
 		
 	}
 };

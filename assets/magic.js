@@ -85,18 +85,30 @@ Game.Spell = function(properties){
 
 Game.SpellBook = new Game.Repository('spells', Game.Spell);
 
-Game.SpellBook.define('test', {
-	name: 'test',
+Game.SpellBook.define('regen', {
+	name: 'regen',
 	manaCost: { green: 2 },
 	onCast: function(target){
-		console.log(target.getName() + ' - onCast()');		
+		console.log(target.getName() + ' - onCast(' + target + ')');		
 	},
-	buff:{
-		onExpire: function(){ 
-			console.log(this.getName() + ' - onExpire()'); 
-		},
-		perTurn: function(){
-			console.log(this.getName() + ' - perTurn()');
+	buff: function(target){
+		this.duration = 20;
+		this.target = target;
+		this.onExpire= function(){
+			console.log(this + ' - onExpire()'); 
+		};
+		
+		this.perTurn = function(){	// 'this.target' refers to the target that is part of the 'buff' object
+			console.log(this.duration);
+			
+			if (this.healTicks == undefined){
+				this.healTicks = 0;
+			}
+			this.healTicks++;
+			if (this.healTicks % 5 == 0){
+				this.healTicks = 0;
+				this.target.heal(1);
+			}
 		}
 	}
 });
