@@ -398,13 +398,13 @@ Game.EntityMixins.MagicUser = {
 	},
 	castSpell: function(spellName, target){
 		// Do we know that spell?
-		if (!this._magic.spellbook.hasOwnProperty(spellName)) { console.log("nope! - entitymixins.js 400"); return; }
+		if (this._magic.spellbook.indexOf(spellName) < 0) { console.log("nope! - entitymixins.js 400"); return; }
 		let spell = Game.SpellBook.create(spellName);
 		
 		// Do we have the mana?
 		for (color in spell._manaCost){
 			if (this._magic.mana[color] < spell._manaCost[color]){
-				console.log("Note enough mana");
+				console.log("Not enough mana");
 				Game.sendMessage(this, "You don't have enough mana!");
 				Game.refresh();
 				return;

@@ -4,7 +4,7 @@ Game.Magic = function(){
 	this.mana = { white: 0, black: 0, green: 0, blue:  0, red:   0 };
 	this.maxMana = { white: 0, black: 0, green: 0, blue:  0, red:   0 };
 	
-	this.spellbook = {};
+	this.spellbook = [];
 	
 };
 
@@ -71,6 +71,8 @@ Game.Spell = function(properties){
 	properties = properties || {}; // This should never happen, as we have no useful default set
 	
 	this._name = properties['name'];
+	this._description = properties['description'] || "TODO: Write description";
+	this._targets = properties['targets'] || 'self';	// Figure out hitting a ranged target
 	
 	// Not sure that "|| undefined" is the right way to do this
 	// Not all spells have all options - may want to switch to a series of conditionals
@@ -84,23 +86,25 @@ Game.Spell = function(properties){
 };
 
 Game.SpellBook = new Game.Repository('spells', Game.Spell);
+Game.SpellBook.getDesc = function(name){
+	return this._templates[name].description;
+};
 
 Game.SpellBook.define('regen', {
 	name: 'regen',
+	description: "Heals 1 hp every 5 turns for 20 turns",
+	targets: 'self',
 	manaCost: { green: 2 },
 	onCast: function(target){
-		console.log(target.getName() + ' - onCast(' + target + ')');		
 	},
 	buff: function(target){
 		this.duration = 20;
 		this.target = target;
 		this.onExpire= function(){
-			console.log(this + ' - onExpire()'); 
+			Game.sendMessage(this.target, "The effects of your regen spell fade.");
 		};
 		
 		this.perTurn = function(){	// 'this.target' refers to the target that is part of the 'buff' object
-			console.log(this.duration);
-			
 			if (this.healTicks == undefined){
 				this.healTicks = 0;
 			}

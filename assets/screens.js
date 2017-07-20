@@ -93,7 +93,7 @@ Game.Screen.playScreen = {
 		// Start the map's engine
 		this._map.getEngine().start();
 		
-		this._player._magic.spellbook['regen'] = true;
+		this._player._magic.spellbook.push('regen');
 		
 	},//enter()
     
@@ -101,6 +101,7 @@ Game.Screen.playScreen = {
 	
     render: function(display) {
 		// Render the subscreen, if it exists
+		let usingCursor = this._mode == 'look' || this._mode == 'target' || this._mode == 'spellTarget';
 		if (this._subScreen) {
 			this._subScreen.render(display);
 			return;
@@ -109,7 +110,7 @@ Game.Screen.playScreen = {
 		let screenHeight = Game.getScreenHeight();
 		
 		let screenCenter = {x: this._player.getX(), y: this._player.getY()}
-		if(this._mode == 'look' || this._mode == 'target') {
+		if(usingCursor) {
 			screenCenter.x = this._cursor.x;
 			screenCenter.y = this._cursor.y;
 		} else {
@@ -182,7 +183,7 @@ Game.Screen.playScreen = {
 					// box the character we want to show, just in case
 					// The draw function handles arrays by combining the characters
 					let dispChar = glyph.getChar();
-					if ((this._mode == 'look' || this._mode == 'target') && this._cursor.x == x && this._cursor.y == y){
+					if ((usingCursor) && this._cursor.x == x && this._cursor.y == y){
 						dispChar.push('_');
 						cursorIsVisible = true;
 					}
@@ -195,7 +196,7 @@ Game.Screen.playScreen = {
 						foreground,
 						glyph.getBackground()
 					);
-				} else if ((this._mode == 'look' || this._mode == 'target') && this._cursor.x == x && this._cursor.y == y) {	// If our look cursor is in unexplored territory
+				} else if ((usingCursor) && this._cursor.x == x && this._cursor.y == y) {	// If our look cursor is in unexplored territory
 					display.draw(
 						x - topLeftX,
 						y - topLeftY,
@@ -252,7 +253,7 @@ Game.Screen.playScreen = {
 		
 		
 		} 
-		if (this._mode == 'look' || this._mode == 'target') { // In either 'look' or 'target' mode, show what's under the cursor
+		if (usingCursor) { // In either 'look' or 'target' mode, show what's under the cursor
 			let lookText = '';
 			if (cursorIsVisible) {
 				let capitalize = true;
@@ -290,7 +291,13 @@ Game.Screen.playScreen = {
     handleInput: function(inputType, inputData) {
 		// If there's a subscreen, use that handler instead
 		if(this._subScreen){
-			this._subScreen.handleInput(inputType, inputData);
+			let subScreenReturn = this._subScreen.handleInput(inputType, inputData) || {};
+			if (subScreenReturn.spellcast && subScreenReturn.spellcast){
+				this._mode = 'spellTarget';
+				this._spellToCast = subScreenReturn.spellName || null;
+			} else {
+			}
+			Game.refresh();
 			return;
 		}
 		if (inputType === 'keydown') {
@@ -309,12 +316,12 @@ Game.Screen.playScreen = {
 				}
 			}
 			// Targeting a ranged attack (and eventually a ranged spell)
-			if (this._mode == 'target'){
+			if (this._mode == 'target' || this._mode == 'spellTarget'){
 				// Confirm Attack
 				if (inputData.keyCode === ROT.VK_RETURN) {
-					console.log('I should be making a ranged attack');
-					if(this._mode == 'target'){
-						var target = this._map.getEntityAt(this._cursor.x, this._cursor.y, this._player.getZ());
+					console.log('Some kind of targeted effect');
+					var target = this._map.getEntityAt(this._cursor.x, this._cursor.y, this._player.getZ());
+					if (this._mode == 'target'){
 						if(target){
 							this._player.rangedAttack(target, this._player.getAmmoSlot());
 						} else {
@@ -326,6 +333,14 @@ Game.Screen.playScreen = {
 						this._mode = 'play';
 						this._map.getEngine().unlock();
 					}
+					if (this._mode == 'spellTarget' && this._spellToCast !== null){
+						this._mode = 'play'
+						Game.refresh();
+						this._player.castSpell(this._spellToCast, target);
+						this._map.getEngine().unlock();
+					}
+					
+					
 				}
 				// Cancel Attack
 				if (inputData.keyCode === ROT.VK_ESC) {
@@ -334,7 +349,7 @@ Game.Screen.playScreen = {
 				}
 			}
 			// If you're moving a cursor
-			if (this._mode == 'look' || this._mode == 'target'){
+			if (this._mode == 'look' || this._mode == 'target' || this._mode == 'spellTarget'){
 				console.log("In look mode, inputData.keyCode: " + inputData.keyCode);
 				switch(inputData.keyCode){
 					case ROT.VK_NUMPAD1: {this.cursorMove(-1,  1); break; }
@@ -390,30 +405,29 @@ Game.Screen.playScreen = {
 					return; 
 				}
 				
-				case ROT.VK_C:{
-					if (inputData.shiftKey) { 
-					}
-					else{
-						this._player.castSpell('regen', this._player);
-						break;
-					} 
-					return;
-				}
 				//
 				// END DEBUG
 				
 				// Testing Commands
 				
-				case ROT.VK_P:{
-					let pos = this._player.getPos();
-					let tile = this._map.getTile(pos.x, pos.y, pos.z);
-					if (tile.getName() == 'altar' && tile.isActive() == false){ // if we're on an unactivated altar
-						Game.Screen.gainMagic.setup(this._player, pos, tile);
-						this.setSubScreen(Game.Screen.gainMagic);
+				
+				// CAST a spell
+				case ROT.VK_C:{
+					if (inputData.shiftKey) { 
+						// shift+c to test regen spell
+						this._player.castSpell('regen', this._player);
+						break;
 					}
-	
+					else{
+						Game.Screen.spellSelection.setup(this._player);
+						this.setSubScreen(Game.Screen.spellSelection);
+						
+					} 
 					return;
 				}
+				
+				
+				
 				// End testing
 				
 				// Working Commands
@@ -436,6 +450,17 @@ Game.Screen.playScreen = {
 				case ROT.VK_L: {
 					this._mode = 'look';
 					Game.refresh();
+					return;
+				}
+				// PRAY - activate altars
+				case ROT.VK_P:{
+					let pos = this._player.getPos();
+					let tile = this._map.getTile(pos.x, pos.y, pos.z);
+					if (tile.getName() == 'altar' && tile.isActive() == false){ // if we're on an unactivated altar
+						Game.Screen.gainMagic.setup(this._player, pos, tile);
+						this.setSubScreen(Game.Screen.gainMagic);
+					}
+	
 					return;
 				}
 				// RANGED ATTACK
@@ -625,7 +650,6 @@ Game.Screen.gainStatScreen = {
 };
 
 // Magic stat gain
-// If not an an altar, shows current magic stats
 Game.Screen.gainMagic = {
 	setup: function(entity, pos, tile) {
 		// Must be called before rendering
@@ -699,6 +723,52 @@ Game.Screen.gainMagic = {
 		}
 	}
 	
+};
+
+Game.Screen.spellSelection = {
+	setup: function(entity){
+		this._entity = entity;
+	},
+	render: function(display){
+		display.drawText(0,0, "Select a spell to cast");
+		let letters = 'abcdefghijklmnopqrstuvwxyz';
+		let book = this._entity._magic.spellbook;
+		let row = 2;
+		for (slot = 0; slot < book.length; slot++){
+			// Assign a letter to each slot in the spellbook
+			let letter = letters.substring(slot, slot+1);
+			dispStr = letter + " - " + book[slot] + ": "+ Game.SpellBook.getDesc(book[slot]);
+			display.drawText(0, row+slot, dispStr);
+		}
+	},
+	handleInput: function(inputType, inputData){
+		if (inputType === 'keydown'){
+			if (inputData.keyCode == ROT.VK_ESCAPE){ return false; }
+			let spell = this._entity._magic.spellbook[inputData.keyCode - ROT.VK_A];
+			console.log(spell);
+			
+			
+			
+			if (Game.SpellBook._templates[spell].targets == 'self') {
+				this._entity.castSpell(spell, this._entity); 
+				Game.Screen.playScreen.setSubScreen(null);
+				return { spellcast: false };
+			}
+			
+			
+			Game.Screen.playScreen.setSubScreen(null);
+			//Game.refresh();
+			return { spellcast: true, spellName: spell };
+			
+			
+			// TODO: Figure out if we need to handle the spellcasting here (how do we target?)
+			// or if we need to figure out a way to pass the selection back out and handle it
+			// there.  We'll probably need to adjust the main playscreen handler if we want to
+			// do anything with values we pass back.
+			
+
+		}
+	}
 };
 
 // An Item list based on template for different use cases
