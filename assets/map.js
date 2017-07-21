@@ -31,7 +31,7 @@ Game.Map = function(tiles, player){
 	
 	
 	// Randomly spawn and place enemies and items
-	//this.populate();
+	this.populate();
 	
 }; // Constructor
 
@@ -46,6 +46,19 @@ Game.Map.prototype.getPlayer = function() { return this._player; };
 // All chances are relative to total among all entries for a given level
 // We generate a random array with 'chance' copies of each name, then pick randomly from that array
 
+
+// Dungeon population and related helper functions
+
+Game.Map.prototype.placeAltarAt = function(x, y, z){
+	if(this.isEmptyFloor(x,y,z)){
+		this._tiles[z][x][y] = Game.Tile.altarTile;
+	}
+	return false;
+}
+
+
+// This object defines the relative chances of each monster type to be spawned on a given level
+
 Game.Map.enemyAssign = {
 	level0: [{name: 'bat', chance: 2}, {name: 'newt', chance: 2}, {name: 'kobold', chance: 1}, {name: 'fungus', chance: 5}],
 	level1: [{name: 'bat', chance: 4}, {name: 'newt', chance: 4}, {name: 'kobold', chance: 2}, {name: 'fungus', chance: 2}],
@@ -56,31 +69,28 @@ Game.Map.enemyAssign = {
 	
 };
 
-// Map setup, random spawners, etc.
-Game.Map.prototype.placeAltarAt = function(x, y, z){
-	if(this.isEmptyFloor(x,y,z)){
-		this._tiles[z][x][y] = Game.Tile.altarTile;
-	}
-	return false;
-}
 
 Game.Map.prototype.populate = function(){
-	for (let z = 0; z < this._depth; z++){
-		// Generate an array of monster names based on their relative chances (given by the enemyAssign object)
-		// Shuffle the array, then choose random entries from it
+	// Generate an array of monster names based on their relative chances (given by the enemyAssign object)
+	for (let z = 0; z < this._depth; z++){	// For each floor
 		let levelRndArr = [];
 		let lvlStr = '';
+		
+		// See if we have an array for this level, or if we should use the default
 		if (Game.Map.enemyAssign.hasOwnProperty('level'+z)) { lvlStr = 'level'+z; } else { lvlStr = 'other'; }
+		
+		// Go through each entry and put 'chance' copies of the monster name in our array
 		for (let i = 0; i < Game.Map.enemyAssign[lvlStr].length; i++ ){
 			let entry = Game.Map.enemyAssign[lvlStr][i];
 			for (let j = 0; j < entry.chance; j++){
 				levelRndArr.push(entry.name);
 			}
-		levelRndArr = levelRndArr.randomize();
+			
+			// Shuffle the array
+			levelRndArr = levelRndArr.randomize();
 		}
 		
-		// DEBUG console.log("Level "+z+" monster array: " + JSON.stringify(levelRndArr));
-		
+		// Pick 15 monster names at random from our array, and spawn them
 		for (let i = 0; i < 15; i++){
 			let rndNum = Math.floor(Math.random() * levelRndArr.length)
 			let nameStr = levelRndArr[rndNum];

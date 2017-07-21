@@ -191,9 +191,6 @@ Game.EntityMixins.MessageRecipient = { // Entity is able to receive messages - s
 	clearMessages: function() { this._messages = []; }
 };
 
-Game.EntityMixins.Digger = { // Entity can dig walls
-	name: 'Digger'
-}
 
 Game.EntityMixins.Sight = { // Signifies that our entity posseses a field of vision in a radius
 	name: 'Sight',
@@ -291,6 +288,12 @@ Game.EntityMixins.CorpseDropper = { // Entity can drop a corpse when killed
 		}
 	}
 }
+
+
+// Status Mixins - These mixins have no effects or inherent code, but are checked by other things
+Game.EntityMixins.Digger = { // Entity can dig walls
+	name: 'Digger'
+};
 
 Game.EntityMixins.Trample = {	// This entity can move into an occupied space if the attack kills the occupier
 	name: 'Trample'
@@ -396,35 +399,40 @@ Game.EntityMixins.MagicUser = {
 			}			
 		};
 	},
-	castSpell: function(spellName, target){
-		// Do we know that spell?
+	canCastSpell: function(spellName){
+		// Do we have the mana?
 		if (this._magic.spellbook.indexOf(spellName) < 0) { console.log("nope! - entitymixins.js 400"); return; }
 		let spell = Game.SpellBook.create(spellName);
 		
-		// Do we have the mana?
 		for (color in spell._manaCost){
 			if (this._magic.mana[color] < spell._manaCost[color]){
 				console.log("Not enough mana");
 				Game.sendMessage(this, "You don't have enough mana!");
 				Game.refresh();
-				return;
-			} else {
-				this._magic.mana[color] -= spell._manaCost[color];
+				return false;
 			}
 		}
+		return true;
+	},
+	castSpell: function(spellName, target){
+		let spell = Game.SpellBook.create(spellName);
+		
+		this._magic.mana[color] -= spell._manaCost[color];
 		
 		spell._onCast(target);
 		
+		if (spell.hasBuff()){
+			target._buffs[spellName] = new spell._buff(target);
+		}
 		
-		let newBuff = new spell._buff(target);
-		
-		// this completely overwrites old versions
-		target._buffs[spellName] = newBuff;
 		castMsg = vsprintf("You cast %s on %s", 
-		[spellName, (target.getName() == 'you' ? 'yourself' : target.getName())])
+			[spellName, (target.getName() == 'you' ? 'yourself' : target.getName())]);
 		Game.sendMessage(this, castMsg);
 		//Game.refresh();
 		
+	},
+	learnSpell(spellName){
+		this._magic.spellbook.push(spellName);
 	}
 };
 
@@ -595,7 +603,7 @@ Game.EntityMixins.Equipper = {
 
 // AI Mixins - 'Actor' group
 // All of these need an act() - this is what the engine calls on the entity's turn
-// That act() should call this.resolveBuffs()
+// That act() should call this.resolveBuffs() and then check to see if the entity is stil alive
 Game.EntityMixins.PlayerActor = {
 // Main player's actor mixin
 	name: 'PlayerActor',
@@ -607,6 +615,7 @@ Game.EntityMixins.PlayerActor = {
 		this._acting = true;
 		
 		this.resolveBuffs();
+		if(!this._alive){ return; }	// If killed by an ongoing effect
 		
 		this.addTurnHunger();
 		// Detect if the game is over
@@ -637,6 +646,8 @@ Game.EntityMixins.TurnSpawnActor = {
 	},
 	act: function(){
 		this.resolveBuffs();
+		if(!this._alive){ return; }	// If killed by an ongoing effect
+		
 		if (this._spawnRate < 1) this._spawnRate = 1;	// In case we ever let this change and get below 1 somehow
 		if (this._turnCounter == this._spawnRate){
 			this.spawn();
@@ -656,6 +667,8 @@ Game.EntityMixins.RngSpawnActor = {	// For rng-based spawn rate
 	},
 	act: function(){
 		this.resolveBuffs();
+		if(!this._alive){ return; }	// If killed by an ongoing effect
+		
 		if(Math.random() <= this._spawnChance){ // 2% chance to spread
 			this.spawn();
 		}
@@ -671,6 +684,8 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 	},
 	act: function(){
 		this.resolveBuffs();
+		if(!this._alive){ return; }	// If killed by an ongoing effect
+		
 		// Prioritize tasks until one can be acted on
 		// We factored out the pre-test.  Now we attempt the action and return false
 		// if it is impossible - no targets in range, whatever.  Keep trying in order until something succeeds

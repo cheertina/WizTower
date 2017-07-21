@@ -121,10 +121,10 @@ Game.Entity.prototype.resolveBuffs = function(){
 	
 	for (key in this._buffs){
 		if(this._buffs[key].hasOwnProperty('perTurn')) { 
-			this._buffs[key].perTurn();
 			if (this._buffs[key].duration > 0){
 				this._buffs[key].duration--;
 			}
+			this._buffs[key].perTurn();
 			if (this._buffs[key].duration == 0){
 				this._buffs[key].onExpire();
 				delete this._buffs[key];

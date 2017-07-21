@@ -28,7 +28,8 @@ Game.Magic.prototype.increaseMaxMana = function(color, delta = 10){
 |*| Everything should have at least one of these
 |*| 	manaCost - cost to cast
 |*| 	manaUsed - for non-timed effects, a decrease in maxMana while active
-|*|
+|*|			This will also require a way to cancel the effect, which doesn't currently exist
+|*| 
 |*| Each one may have any or all of the following
 |*| 	onCast - one-shot events
 |*| 	onExpire - delayed one-shot events
@@ -38,30 +39,6 @@ Game.Magic.prototype.increaseMaxMana = function(color, delta = 10){
 |*| This may not be worth it, might be better off using onCast/Expire for this
 |*| 	bonus - passive bonus to stats
 |*|
-
-Game.SpellBook.define('',{
-	name: '',
-	manaCost: {
-		white: 0,
-		black: 0,
-		green: 0,
-		blue:  0,
-		red:   0
-	},
-	manaUsed: {
-		white: 0,
-		black: 0,
-		green: 0,
-		blue:  0,
-		red:   0
-	},
-	onCast: function(){},
-	onExpire: function(){},
-	perTurn: function(){},
-	timer: ,
-	bonus: ,
-});
-
 |*|
 \*/
 
@@ -74,29 +51,57 @@ Game.Spell = function(properties){
 	this._description = properties['description'] || "TODO: Write description";
 	this._targets = properties['targets'] || 'self';	// Figure out hitting a ranged target
 	
-	// Not sure that "|| undefined" is the right way to do this
-	// Not all spells have all options - may want to switch to a series of conditionals
+	//Some properties need default values, some don't
+	
 	this._manaCost = properties['manaCost'] || {};
 	this._manaUsed = properties['manaUsed'] || {};
 	
-	this._onCast = properties['onCast']     || undefined;
-	this._buff = properties['buff'] || {};
+	this._onCast = properties['onCast']     || function(target){ return; }
 	
-	this._bonus = properties['bonus']       || {};
+	if (properties['buff']) { this._buff = properties['buff']; }
+	if (properties['bonus']) { this._buff = properties['bonus']; }
+	
+	
 };
+Game.Spell.prototype.hasBuff = function(){
+	return this.hasOwnProperty('_buff');
+}
+
 
 Game.SpellBook = new Game.Repository('spells', Game.Spell);
+Game.SpellBook.getName = function(name, colorized = false){
+	if(colorized){
+		let cost = this._templates[name].manaCost;
+		let colors = Object.keys(cost);
+		let textColor;
+		let bg = "black"
+		if(colors.length > 1) { textColor = "gold"}
+		else if (colors[0] == "blue") { textColor = "cyan"; }
+		else if (colors[0] == "green") { textColor = "lime"; }
+		else textColor = colors[0];
+		if (textColor == "black") { bg = "dimgray"; }
+		let outStr = "%c{"+textColor+"}%b{"+bg+"}"
+		outStr += this._templates[name].name;
+		outStr += "%c{}%b{}"
+	
+		return outStr;
+	}
+	else return this._templates[name].name;
+}
+
 Game.SpellBook.getDesc = function(name){
 	return this._templates[name].description;
 };
+Game.SpellBook.getManaCost = function(name){
+	return this._templates[name].manaCost;
+};
 
 Game.SpellBook.define('regen', {
-	name: 'regen',
+	name: 'Regeneration',
 	description: "Heals 1 hp every 5 turns for 20 turns",
 	targets: 'self',
 	manaCost: { green: 2 },
-	onCast: function(target){
-	},
+	onCast: function(target){ return; },
 	buff: function(target){
 		this.duration = 20;
 		this.target = target;
@@ -105,16 +110,35 @@ Game.SpellBook.define('regen', {
 		};
 		
 		this.perTurn = function(){	// 'this.target' refers to the target that is part of the 'buff' object
-			if (this.healTicks == undefined){
-				this.healTicks = 0;
-			}
-			this.healTicks++;
-			if (this.healTicks % 5 == 0){
-				this.healTicks = 0;
-				this.target.heal(1);
-			}
+			if (this.duration % 5 == 0){ this.target.heal(1); }
 		}
 	}
 });
 
+Game.SpellBook.define('heal', {
+	name: 'Heal',
+	description: "Heals 5 hp",
+	targets: 'self',
+	manaCost: { white: 2 },
+	onCast: function(target){
+		target.heal(5);
+	}
+});
 
+Game.SpellBook.define('fireball',{
+	name: 'Fireball',
+	description: "Deals 2 damage, plus an additional 3 damage over 9 turns",
+	manaCost: {	red: 2 },
+	targets: 'ranged',
+	onCast: function(target){
+		target.heal(-2);
+	},
+	buff: function(target){
+		this.duration = 9;
+		this.target = target;
+		this.onExpire= function(){ };
+		this.perTurn = function(){	// 'this.target' refers to the target that is part of the 'buff' object
+			if (this.duration % 3 == 0) { this.target.heal(-1); }
+		};
+	}
+});

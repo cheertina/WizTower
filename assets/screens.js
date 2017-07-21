@@ -42,14 +42,15 @@ Game.Screen.helpScreen = {
 		display.drawText(2,4, "Move with numpad");
 		display.drawText(2,5, "Press 0 or 5 to wait a round");
 		display.drawText(1,7, "%c{white}Actions");
-		display.drawText(2,8, "D: Drop item");
-		display.drawText(2,9, "E: Eat consumable");
-		display.drawText(2,10, "I: View inventory");
-		display.drawText(2,11, "L: Enter/Exit 'Look' mode");
-		display.drawText(2,12, "W: Wield/wear");
-		display.drawText(2,13, ",: Pick up item");
-		display.drawText(1,15, "%c{white}Other");
-		display.drawText(2,16, "Select item (Inventory screen)");	
+		display.drawText(2,8, "C: Cast spell");
+		display.drawText(2,9, "D: Drop item");
+		display.drawText(2,10, "E: Eat consumable");
+		display.drawText(2,11, "I: View inventory");
+		display.drawText(2,12, "L: Enter/Exit 'Look' mode");
+		display.drawText(2,13, "W: Wield/wear");
+		display.drawText(2,14, ",: Pick up item");
+		display.drawText(1,16, "%c{white}Other");
+		display.drawText(2,17, "Select item (Inventory screen)");	
 		display.drawText(1,24, "Press [Enter] to return");		
 	},
 	handleInput: function (inputType, inputData){
@@ -93,7 +94,10 @@ Game.Screen.playScreen = {
 		// Start the map's engine
 		this._map.getEngine().start();
 		
-		this._player._magic.spellbook.push('regen');
+		this._player.learnSpell('regen');
+		this._player.learnSpell('heal');
+		this._player.learnSpell('fireball');
+		
 		
 	},//enter()
     
@@ -296,6 +300,7 @@ Game.Screen.playScreen = {
 				this._mode = 'spellTarget';
 				this._spellToCast = subScreenReturn.spellName || null;
 			} else {
+				// Return values from other (future) subScreens get checked here
 			}
 			Game.refresh();
 			return;
@@ -324,7 +329,7 @@ Game.Screen.playScreen = {
 					if (this._mode == 'target'){
 						if(target){
 							this._player.rangedAttack(target, this._player.getAmmoSlot());
-						} else {
+						} else {	// If you shoot a ranged weapon at an empty space, put the ammo there.
 							let m = this._map;
 							let aS = this._player.getAmmoSlot();
 							let ammoItem = this._player.removeItem(aS);
@@ -374,7 +379,10 @@ Game.Screen.playScreen = {
 				case ROT.VK_NUMPAD2: this.move( 0,  1, 0); break;
 				case ROT.VK_NUMPAD3: this.move( 1,  1, 0); break;
 				case ROT.VK_NUMPAD4: this.move(-1,  0, 0); break;
-				case ROT.VK_NUMPAD5: this._player.heal(-1); break; 	// Spend a turn to do nothing - wait
+				case ROT.VK_NUMPAD5: // Used for testing healing spells
+					this._player.heal(-1);	// Intentional fall-through
+				case ROT.VK_NUMPAD0: // Spend a turn to do nothing - wait
+					break; 	
 				case ROT.VK_NUMPAD6: this.move( 1,  0, 0); break;
 				case ROT.VK_NUMPAD7: this.move(-1, -1, 0); break;
 				case ROT.VK_NUMPAD8: this.move( 0, -1, 0); break;
@@ -734,39 +742,51 @@ Game.Screen.spellSelection = {
 		let letters = 'abcdefghijklmnopqrstuvwxyz';
 		let book = this._entity._magic.spellbook;
 		let row = 2;
+		let manaDot = String.fromCharCode(664)
 		for (slot = 0; slot < book.length; slot++){
 			// Assign a letter to each slot in the spellbook
 			let letter = letters.substring(slot, slot+1);
-			dispStr = letter + " - " + book[slot] + ": "+ Game.SpellBook.getDesc(book[slot]);
-			display.drawText(0, row+slot, dispStr);
+			dispStr = letter + " - " ;
+			let cost = Game.SpellBook.getManaCost(book[slot]);
+			for (color in cost){
+				if (color == 'black'){ dispStr += "%c{black}%b{dimgray}"; }
+				else if (color == 'blue') {dispStr += "%c{cyan}%b{}"; }
+				else if (color == 'green') { dispStr += "%c{lime}%b{}"; }
+				else dispStr += "%c{"+color+"}%b{}"
+				
+				for (let i = 0; i < cost[color]; i++){
+					dispStr += manaDot;
+				}
+			}
+			dispStr += "%c{}%b{} "+Game.SpellBook.getName(book[slot], true);
+			display.drawText(0, row+2*slot, dispStr);
+			display.drawText(6, row+2*slot+1, Game.SpellBook.getDesc(book[slot]));
+			
 		}
 	},
 	handleInput: function(inputType, inputData){
 		if (inputType === 'keydown'){
-			if (inputData.keyCode == ROT.VK_ESCAPE){ return false; }
+			if (inputData.keyCode == ROT.VK_ESCAPE){ 
+				Game.Screen.playScreen.setSubScreen(null);
+				return false; 
+			}
 			let spell = this._entity._magic.spellbook[inputData.keyCode - ROT.VK_A];
 			console.log(spell);
 			
-			
+			if (!this._entity.canCastSpell(spell)) { 
+				Game.Screen.playScreen.setSubScreen(null);
+				return false;
+			}
 			
 			if (Game.SpellBook._templates[spell].targets == 'self') {
 				this._entity.castSpell(spell, this._entity); 
 				Game.Screen.playScreen.setSubScreen(null);
-				return { spellcast: false };
+				return false;
 			}
 			
 			
 			Game.Screen.playScreen.setSubScreen(null);
-			//Game.refresh();
 			return { spellcast: true, spellName: spell };
-			
-			
-			// TODO: Figure out if we need to handle the spellcasting here (how do we target?)
-			// or if we need to figure out a way to pass the selection back out and handle it
-			// there.  We'll probably need to adjust the main playscreen handler if we want to
-			// do anything with values we pass back.
-			
-
 		}
 	}
 };

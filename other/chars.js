@@ -50,7 +50,7 @@ Game.drawStuff2 = function(){
 		for (let j = 0; j < 64; j++){
 			this._display.draw(j,i, String.fromCharCode(64*i + j), 'white');
 		}
-		this._display.drawText(65, i, vsprintf("%s - %s", [i*64,(i+1)*64]));
+		this._display.drawText(65, i, vsprintf("%s - %s", [i*64,(i+1)*64-1]));
 	}
 	for (let j = 0; j < 64; j++){
 		if(j%2 == 0){
