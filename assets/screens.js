@@ -97,6 +97,9 @@ Game.Screen.playScreen = {
 		this._player.learnSpell('regen');
 		this._player.learnSpell('heal');
 		this._player.learnSpell('fireball');
+		this._player.learnSpell('drain life');
+		this._player.learnSpell('blink');
+		
 		
 		
 	},//enter()

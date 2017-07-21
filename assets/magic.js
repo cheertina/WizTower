@@ -101,7 +101,7 @@ Game.SpellBook.define('regen', {
 	description: "Heals 1 hp every 5 turns for 20 turns",
 	targets: 'self',
 	manaCost: { green: 2 },
-	onCast: function(target){ return; },
+	onCast: function(target, caster){ return; },
 	buff: function(target){
 		this.duration = 20;
 		this.target = target;
@@ -120,7 +120,7 @@ Game.SpellBook.define('heal', {
 	description: "Heals 5 hp",
 	targets: 'self',
 	manaCost: { white: 2 },
-	onCast: function(target){
+	onCast: function(target, caster){
 		target.heal(5);
 	}
 });
@@ -130,15 +130,53 @@ Game.SpellBook.define('fireball',{
 	description: "Deals 2 damage, plus an additional 3 damage over 9 turns",
 	manaCost: {	red: 2 },
 	targets: 'ranged',
-	onCast: function(target){
+	onCast: function(target, caster){
 		target.heal(-2);
 	},
-	buff: function(target){
+	buff: function(target, caster){
 		this.duration = 9;
 		this.target = target;
 		this.onExpire= function(){ };
 		this.perTurn = function(){	// 'this.target' refers to the target that is part of the 'buff' object
 			if (this.duration % 3 == 0) { this.target.heal(-1); }
 		};
+	}
+});
+
+Game.SpellBook.define('drain life', {
+	name: 'Drain Life',
+	description: "Deals 2 damage and heals the caster for an equal amount",
+	manaCost: { black: 2 },
+	targets: 'ranged',
+	onCast: function(target, caster){
+		target.heal(-2);
+		caster.heal(2);
+	}
+});
+
+Game.SpellBook.define('blink', {
+	name: 'Blink',
+	description: "Teleports the caster to a random nearby location",
+	manaCost: { blue: 2 },
+	targets: 'self',
+	onCast: function(target, caster){
+		let dx, dy, emptyBool;
+		
+		do{
+			dx = Math.floor((Math.random()*3)+3);
+			dx = dx * ( Math.floor(Math.random()*2) ? -1 : +1)
+			dy = Math.floor((Math.random()*3)+3);
+			dy = dy * ( Math.floor(Math.random()*2) ? -1 : +1)
+			
+			targetPos = {
+				x: target.getX() + dx,
+				y: target.getY() + dy,
+				z: target.getZ()
+			}
+			
+			emptyBool = target.getMap().isEmptyFloor(targetPos.x, targetPos.y, targetPos.z);
+				target.setPosition(targetPos.x, targetPos.y, targetPos.z);
+		}while (!emptyBool)
+		
 	}
 });

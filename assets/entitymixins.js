@@ -414,15 +414,15 @@ Game.EntityMixins.MagicUser = {
 		}
 		return true;
 	},
-	castSpell: function(spellName, target){
+	castSpell: function(spellName, target, caster){
 		let spell = Game.SpellBook.create(spellName);
 		
 		this._magic.mana[color] -= spell._manaCost[color];
 		
-		spell._onCast(target);
+		spell._onCast(target, this);	// 'this' is the caster
 		
 		if (spell.hasBuff()){
-			target._buffs[spellName] = new spell._buff(target);
+			target._buffs[spellName] = new spell._buff(target, this);// 'this' is the caster
 		}
 		
 		castMsg = vsprintf("You cast %s on %s", 
