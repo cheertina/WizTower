@@ -75,14 +75,16 @@ Game.Tile.stairsDownTile = new Game.Tile({
 });
 
 
-Game.Tile.altarTile = new Game.Tile({
-	name: 'altar',
-	character: [String.fromCharCode(928)],
-	foreground: 'gray',
-	active: false,
-	walkable: true,
-	blocksLight: false
-});
-
-
+Game.Tile.altarTile = function(){
+	Game.Tile.call(this, {
+		name: 'altar',
+		character: [String.fromCharCode(928)],
+		foreground: 'gray',
+		active: false,
+		walkable: true,
+		blocksLight: false
+	});
+	return this;
+}
+Game.Tile.altarTile.extend(Game.Tile);
 

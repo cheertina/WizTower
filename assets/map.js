@@ -26,8 +26,14 @@ Game.Map = function(tiles, player){
 	// Add the player
 	this._player = player;	// So AI's can get it
 	this.addEntityAtRandomPosition(player, 0);
-    let altar = this.getRandomFloorPosition(0);
-	this.placeAltarAt(altar.x, altar.y, 0);
+    
+	
+	for(let floor = 0; floor < this._depth; floor++){
+		for (let count = 0; count < floor+1; count++){
+			let altar = this.getRandomFloorPosition(floor);
+			this.placeAltarAt(altar.x, altar.y, floor);
+		}
+	}
 	
 	
 	// Randomly spawn and place enemies and items
@@ -50,8 +56,8 @@ Game.Map.prototype.getPlayer = function() { return this._player; };
 // Dungeon population and related helper functions
 
 Game.Map.prototype.placeAltarAt = function(x, y, z){
-	if(this.isEmptyFloor(x,y,z)){
-		this._tiles[z][x][y] = Game.Tile.altarTile;
+	if(true || this.isEmptyFloor(x,y,z)){
+		this._tiles[z][x][y] = new Game.Tile.altarTile();
 	}
 	return false;
 }

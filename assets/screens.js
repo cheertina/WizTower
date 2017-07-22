@@ -723,12 +723,15 @@ Game.Screen.gainMagic = {
 			if (activated){
 				this._entity._magic.increaseMaxMana(actColor);
 				Game.Screen.playScreen.setSubScreen(undefined);
+				
+				
 				this._tile._active = true;
 				if(actColor == 'black'){ this._tile._background = 'gray'};
 			
 				if(actColor == 'green') { this._tile._foreground = 'lime'; }
 				else if(actColor == 'blue') { this._tile._foreground = 'cyan'; }
 				else { this._tile._foreground = actColor; }
+				
 			}
 			
 		}
