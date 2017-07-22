@@ -31,6 +31,7 @@ Game.Map = function(tiles, player){
 	for(let floor = 0; floor < this._depth; floor++){
 		for (let count = 0; count < floor+1; count++){
 			let altar = this.getRandomFloorPosition(floor);
+			// Fixed issue #4
 			this.placeAltarAt(altar.x, altar.y, floor);
 		}
 	}
