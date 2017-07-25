@@ -99,7 +99,7 @@ Game.Screen.playScreen = {
 		this._player.learnSpell('fireball');
 		this._player.learnSpell('drain life');
 		this._player.learnSpell('blink');
-		
+		this._player.learnSpell('tunneling');
 		
 		
 	},//enter()
@@ -753,6 +753,7 @@ Game.Screen.spellSelection = {
 			// Assign a letter to each slot in the spellbook
 			let letter = letters.substring(slot, slot+1);
 			dispStr = letter + " - " ;
+			// Mana used to cast
 			let cost = Game.SpellBook.getManaCost(book[slot]);
 			for (color in cost){
 				if (color == 'black'){ dispStr += "%c{black}%b{dimgray}"; }
@@ -764,14 +765,31 @@ Game.Screen.spellSelection = {
 					dispStr += manaDot;
 				}
 			}
+			// Mana reserved while active - a reduction in max mana
+			cost = Game.SpellBook.getManaUsed(book[slot]);
+			let reservedStr = ""
+			for (color in cost){
+				if (color == 'black'){ reservedStr += "%c{black}%b{dimgray}"; }
+				else if (color == 'blue') {reservedStr += "%c{cyan}%b{}"; }
+				else if (color == 'green') { reservedStr += "%c{lime}%b{}"; }
+				else reservedStr += "%c{"+color+"}%b{}"
+				
+				for (let i = 0; i < cost[color]; i++){
+					reservedStr += manaDot;
+				}
+			}
+			if (reservedStr !== ""){ dispStr += "("+reservedStr+")"; }
+			
 			dispStr += "%c{}%b{} "+Game.SpellBook.getName(book[slot], true);
+			dispStr += this._entity._magic.isActive(book[slot]) ? " (active)" : "";
+			
 			display.drawText(0, row+2*slot, dispStr);
 			display.drawText(6, row+2*slot+1, Game.SpellBook.getDesc(book[slot]));
 			
 		}
 	},
 	handleInput: function(inputType, inputData){
-		if (inputType === 'keydown'){
+		if (inputType === 'keydown'&& inputData.keyCode >= ROT.VK_A && inputData.keyCode <=ROT.VK_Z){
 			if (inputData.keyCode == ROT.VK_ESCAPE){ 
 				Game.Screen.playScreen.setSubScreen(null);
 				return false; 

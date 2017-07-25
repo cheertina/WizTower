@@ -5,7 +5,7 @@ Game.Magic = function(){
 	this.maxMana = { white: 0, black: 0, green: 0, blue:  0, red:   0 };
 	
 	this.spellbook = [];
-	
+	this.activeSpells = [];
 };
 
 Game.Magic.prototype.increaseMaxMana = function(color, delta = 10){
@@ -19,56 +19,52 @@ Game.Magic.prototype.increaseMaxMana = function(color, delta = 10){
 	else return false;
 };
 
-
-/*\ All the spells go here, 
-|*| 
-|*|	Everything needs a name
-|*|		name - the name of the spell
-|*|
-|*| Everything should have at least one of these
-|*| 	manaCost - cost to cast
-|*| 	manaUsed - for non-timed effects, a decrease in maxMana while active
-|*|			This will also require a way to cancel the effect, which doesn't currently exist
-|*| 
-|*| Each one may have any or all of the following
-|*| 	onCast - one-shot events
-|*| 	onExpire - delayed one-shot events
-|*|		timer - how long it lasts
-|*| 	perTurn - repeated active effects - this should set up a buff with an effect() function
-|*| 
-|*| This may not be worth it, might be better off using onCast/Expire for this
-|*| 	bonus - passive bonus to stats
-|*|
-|*|
-\*/
-
+Game.Magic.prototype.isActive = function(spellName){
+	if (this.activeSpells.indexOf(spellName) == -1) return false;
+	else return true;
+}
 
 // Spell constructor for repository
 Game.Spell = function(properties){
 	properties = properties || {}; // This should never happen, as we have no useful default set
 	
+	// These are reqired - no defaults are provided
+	// If they're left out, we want it to break
 	this._name = properties['name'];
+	this._manaCost = properties['manaCost'];
+	
+	
 	this._description = properties['description'] || "TODO: Write description";
-	this._targets = properties['targets'] || 'self';	// Figure out hitting a ranged target
 	
-	//Some properties need default values, some don't
 	
-	this._manaCost = properties['manaCost'] || {};
-	this._manaUsed = properties['manaUsed'] || {};
+	this._targets = properties['targets'] || 'self';
 	
-	this._onCast = properties['onCast']     || function(target){ return; }
+	// For spells that affect the casters, target and caster will be the same entity
+	this._onCast = properties['onCast'] || function(target, caster){ return; }
 	
 	if (properties['buff']) { this._buff = properties['buff']; }
-	if (properties['bonus']) { this._buff = properties['bonus']; }
+	if (properties['manaUsed']) {
+		this._bonus = properties['bonus']; 
+		this._manaUsed = properties['manaUsed'];
+		this._activeName = properties['activeName'];
+	}
 	
 	
 };
+
+// Spell helper functions
 Game.Spell.prototype.hasBuff = function(){
 	return this.hasOwnProperty('_buff');
-}
+};
 
+Game.Spell.prototype.hasActive = function(){
+	return this.hasOwnProperty('_activeName');
+};
 
+// Spell repository
 Game.SpellBook = new Game.Repository('spells', Game.Spell);
+
+// SpellBook helper functions
 Game.SpellBook.getName = function(name, colorized = false){
 	if(colorized){
 		let cost = this._templates[name].manaCost;
@@ -88,13 +84,44 @@ Game.SpellBook.getName = function(name, colorized = false){
 	}
 	else return this._templates[name].name;
 }
-
 Game.SpellBook.getDesc = function(name){
 	return this._templates[name].description;
 };
 Game.SpellBook.getManaCost = function(name){
 	return this._templates[name].manaCost;
 };
+Game.SpellBook.getManaUsed = function(name){
+	return this._templates[name].manaUsed;
+}
+
+
+/*\ All the spells go here, 
+|*| 
+|*|	Everything needs a name
+|*|		name - the name of the spell
+|*|		description - what it does, as shown to the player on the selection screen
+|*| 	targets - 'self' or 'ranged' - whether to use the cursor interface or just target the caster
+|*| 	manaCost - cost to cast
+|*| 
+|*| 
+|*| Each one may have any or all of the following, but if it has a perTurn it needs a timer
+|*| 	onCast - one-shot events
+|*| 
+|*| 	buff - anything that requires a timer or lasting effect - this is actually a constructor function
+|*| 	for an object that contains the following elements, and spells are not the only way to get them
+|*|			duration - how many turns it lasts; -1 for unlimited
+|*| 		onExpire - delayed one-shot events
+|*| 		perTurn - repeated active effects
+|*| 
+|*| 
+|*| 
+|*| Optional - Toggle-able passive effects - mixins or stat bonuses
+|*| 	manaUsed - for non-timed effects, a decrease in maxMana while active
+|*| 	activeName - an ID to keep in the activeSpells array - probably not shown to the player
+|*| 	bonus - passive bonus to stats, mixins
+|*| 
+|*| 
+\*/
 
 Game.SpellBook.define('regen', {
 	name: 'Regeneration',
@@ -128,15 +155,15 @@ Game.SpellBook.define('heal', {
 Game.SpellBook.define('fireball',{
 	name: 'Fireball',
 	description: "Deals 2 damage, plus an additional 3 damage over 9 turns",
-	manaCost: {	red: 2 },
 	targets: 'ranged',
+	manaCost: {	red: 2 },
 	onCast: function(target, caster){
 		target.heal(-2);
 	},
 	buff: function(target, caster){
 		this.duration = 9;
 		this.target = target;
-		this.onExpire= function(){ };
+		this.onExpire= function(){ return; };
 		this.perTurn = function(){	// 'this.target' refers to the target that is part of the 'buff' object
 			if (this.duration % 3 == 0) { this.target.heal(-1); }
 		};
@@ -146,8 +173,8 @@ Game.SpellBook.define('fireball',{
 Game.SpellBook.define('drain life', {
 	name: 'Drain Life',
 	description: "Deals 2 damage and heals the caster for an equal amount",
-	manaCost: { black: 2 },
 	targets: 'ranged',
+	manaCost: { black: 2 },
 	onCast: function(target, caster){
 		target.heal(-2);
 		caster.heal(2);
@@ -157,8 +184,8 @@ Game.SpellBook.define('drain life', {
 Game.SpellBook.define('blink', {
 	name: 'Blink',
 	description: "Teleports the caster to a random nearby location",
-	manaCost: { blue: 2 },
 	targets: 'self',
+	manaCost: { blue: 2 },
 	onCast: function(target, caster){
 		let dx, dy, emptyBool;
 		
@@ -180,3 +207,27 @@ Game.SpellBook.define('blink', {
 		
 	}
 });
+
+Game.SpellBook.define('tunneling', {
+	name: 'Tunneling',
+	description: "Allows the caster to dig through walls",
+	targets: 'self',
+	manaCost: { red: 1 },
+	manaUsed: { red: 1 },
+	activeName: 'tunneling',
+	bonus: { mixins: [Game.EntityMixins.Digger] }
+});
+
+Game.SpellBook.define('rancor', {
+	name: 'Rancor',
+	description: "Increases attack damage and toughness - grants Trample",
+	targets: 'self',
+	manaCost: { green: 1 },
+	manaUsed: { green: 1 },
+	activeName: 'rancor',
+	bonus: { 
+		mixins: [Game.EntityMixins.Trample]
+		//TODO: increase power and toughness
+	}
+});
+

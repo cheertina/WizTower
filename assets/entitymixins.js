@@ -404,6 +404,12 @@ Game.EntityMixins.MagicUser = {
 		if (this._magic.spellbook.indexOf(spellName) < 0) { console.log("nope! - entitymixins.js 400"); return; }
 		let spell = Game.SpellBook.create(spellName);
 		
+		if (spell.hasActive() && this._magic.activeSpells.indexOf(spell._activeName) !== -1 ){
+			// This is an active spell we can cancel - we don't need to check the mana
+			return true;
+		}
+		
+		
 		for (color in spell._manaCost){
 			if (this._magic.mana[color] < spell._manaCost[color]){
 				console.log("Not enough mana");
@@ -417,10 +423,44 @@ Game.EntityMixins.MagicUser = {
 	castSpell: function(spellName, target, caster){
 		let spell = Game.SpellBook.create(spellName);
 		
+		// See if this is a spell that we have cast on ourself that we can cancel
+		if (spell.hasActive()){	
+			// See if it's already active - if so, cancel it
+			let activeIndex = target._magic.activeSpells.indexOf(spell._activeName);
+			if (activeIndex !== -1){
+				// Unlist it from our array
+				target._magic.activeSpells.splice(activeIndex, 1);
+				// Remove the mixins
+				for(let i = 0; i < spell._bonus.mixins.length; i++){
+					target.removeMixin(spell._bonus.mixins[i]);
+				}
+				// Restore used maxMana
+				for (color in spell._manaUsed){
+					target._magic.maxMana[color] += spell._manaUsed[color];
+				}
+				
+				return;
+				
+			// If not, activate it
+			} else { 
+				target._magic.activeSpells.push(spell._activeName);
+				for(let i = 0; i < spell._bonus.mixins.length; i++){
+					target.addMixin(spell._bonus.mixins[i]);
+				}
+				for (color in spell._manaUsed){
+					target._magic.maxMana[color] -= spell._manaUsed[color];
+				}
+
+			}
+		}
+		
 		this._magic.mana[color] -= spell._manaCost[color];
 		
+		// If a spell has no onCast effect specified this will be a function that just returns
+		// so it's safe to call it like this.
 		spell._onCast(target, this);	// 'this' is the caster
 		
+		// A buff is a turn-based effect - either a per-turn, or a one-shot on a timer
 		if (spell.hasBuff()){
 			target._buffs[spellName] = new spell._buff(target, this);// 'this' is the caster
 		}
