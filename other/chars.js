@@ -2,7 +2,7 @@ var Game =  {
 	_display: null,
     _currentScreen: null,
     _screenWidth: 80,
-    _screenHeight: 24,
+    _screenHeight: 48,
 	
 	init: function() {
         // Any necessary initialization will go here.
@@ -26,27 +26,30 @@ var Game =  {
 Game.drawStuff = function(){
 	let display = this._display;
 	let things = [
-		{chr: [String.fromCharCode(55)]},
-		{chr: [String.fromCharCode(127)]},
-		{chr: [String.fromCharCode(225)]}
+		[String.fromCharCode(644)],
+		[String.fromCharCode(134)],
+		[String.fromCharCode(660)],
+		[String.fromCharCode(741)],
+		[String.fromCharCode(742)],
+		[String.fromCharCode(743)],
+		[String.fromCharCode(744)],
+		[String.fromCharCode(745)],
+		['A'],
+		['B']
 	];
 	
 	for (let i = 0; i < things.length; i++){
-		let chr = things[i].chr;
+		let chr = things[i]
 		// let fg = things[i].fg || 'white';
 		// let bg = things[i].bg || 'black';
+		display.draw(2*i, 28, chr);
 		
-		display.draw(1, i, chr, 'gray',  'black');
-		display.draw(3, i, chr, 'white', 'black');
-		display.draw(5, i, chr, 'green', 'black');
-		display.draw(7, i, chr, 'blue',  'black');
-		display.draw(9, i, chr, 'black', 'gray ');
-		display.draw(11, i, chr,'red',   'black');
 	}
 };
 
 Game.drawStuff2 = function(){
-	for (let i = 0; i < 16; i++){
+	let x = 24;
+	for (let i = 0; i < x; i++){
 		for (let j = 0; j < 64; j++){
 			this._display.draw(j,i, String.fromCharCode(64*i + j), 'white');
 		}
@@ -54,10 +57,10 @@ Game.drawStuff2 = function(){
 	}
 	for (let j = 0; j < 64; j++){
 		if(j%2 == 0){
-			this._display.draw(j, 16, '|');
+			this._display.draw(j, x, '|');
 		}
 		if(j%4 == 0){
-			this._display.draw(j, 18, j);
+			this._display.draw(j, x+2, j);
 		}
 	}
 }
@@ -72,6 +75,8 @@ window.onload = function() {
         // Add the container to our HTML page
         document.body.appendChild(Game.getDisplay().getContainer());
     }
+
 	Game.drawStuff2();
+	Game.drawStuff();
 };
 

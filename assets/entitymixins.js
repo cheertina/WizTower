@@ -366,7 +366,14 @@ Game.EntityMixins.RandomStatGainer = {
 Game.EntityMixins.PlayerStatGainer = {
 	name: 'PlayerStatGainer',
 	groupName: 'StatGainer',
+	init: function(){
+		this._totalAltars = 0;
+		this._activeAltars = 0;
+	},
 	onGainLevel: function(){
+		this._totalAltars++;
+	},
+	onGainLevel_old: function(){
 		Game.Screen.gainStatScreen.setup(this);
 		Game.Screen.playScreen.setSubScreen(Game.Screen.gainStatScreen);
 	}

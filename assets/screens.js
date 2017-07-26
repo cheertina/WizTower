@@ -467,7 +467,8 @@ Game.Screen.playScreen = {
 				case ROT.VK_P:{
 					let pos = this._player.getPos();
 					let tile = this._map.getTile(pos.x, pos.y, pos.z);
-					if (tile.getName() == 'altar' && tile.isActive() == false){ // if we're on an unactivated altar
+					let availableAltars = (this._player._totalAltars - this._player._activeAltars) > 0;
+					if (tile.getName() == 'altar' && tile.isActive() == false && availableAltars){ // if we're on an unactivated altar
 						Game.Screen.gainMagic.setup(this._player, pos, tile);
 						this.setSubScreen(Game.Screen.gainMagic);
 					}

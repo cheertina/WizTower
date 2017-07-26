@@ -35,6 +35,7 @@ Game.Entity.prototype.tryMove = function(x, y, z) {
 	if (z < this.getZ()){
 		if (tile != Game.Tile.stairsUpTile){
 			Game.sendMessage(this, "You can't go up here!");
+			return false;
 		} else {
 			Game.sendMessage(this, "You ascend to level %d", [z + 1]); // +1 is so we start on "Level 1"
 			this.setPosition(x, y, z);
@@ -42,6 +43,7 @@ Game.Entity.prototype.tryMove = function(x, y, z) {
 	} else if (z > this.getZ()){
 		if (tile != Game.Tile.stairsDownTile){
 			Game.sendMessage(this, "You can't go down here!");
+			return false;
 		} else {
 			Game.sendMessage(this, "You descend to level %d", [z + 1]); // see above
 			this.setPosition(x, y, z);

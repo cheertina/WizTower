@@ -1,5 +1,20 @@
 Game.ItemRepository = new Game.Repository('items', Game.Item);
 
+/* Possible glyphs for things
+
+String.fromCharCode(644) - sword with hilt - ʄ
+134 - Dagger - standard typographic, doesn't show in Notepad++
+
+660 - Scythe - ʔ
+
+741 - ˥
+742 - ˦
+743 - ˧
+744 - ˨
+745 - ˩
+
+*/
+
 Game.ItemRepository.define('apple', {
 	name: 'apple',
 	character: '%',
