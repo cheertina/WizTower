@@ -38,6 +38,7 @@ Game.Map = function(tiles, player){
 	
 	
 	// Randomly spawn and place enemies and items
+	//this.simplePopulate();
 	this.populate();
 	
 }; // Constructor
@@ -106,9 +107,17 @@ Game.Map.prototype.populate = function(){
 		}
 		
 		
+		// some items from the list of possible random items
+		for (let i = 0; i < 10; i++){
+			let newItem = Game.ItemRepository.createRandom();
+			this.addItemAtRandomPosition(newItem,z);
+		}
 		
 		
 	}
+	
+	// And a spellbook
+	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook'), 0);
 }
 
 Game.Map.prototype.simplePopulate = function() {

@@ -369,9 +369,13 @@ Game.EntityMixins.PlayerStatGainer = {
 	init: function(){
 		this._totalAltars = 0;
 		this._activeAltars = 0;
+		this.getAltarsAvailable = function(){
+			return this._totalAltars - this._activeAltars;
+		}
 	},
 	onGainLevel: function(){
 		this._totalAltars++;
+		Game.Screen.playScreen._mode = 'level alert';
 	},
 	onGainLevel_old: function(){
 		Game.Screen.gainStatScreen.setup(this);
@@ -477,6 +481,10 @@ Game.EntityMixins.MagicUser = {
 		Game.sendMessage(this, castMsg);
 		//Game.refresh();
 		
+	},
+	readBook: function(bookItem){
+		console.log("TODO: implement readBook()");
+		return;
 	},
 	learnSpell(spellName){
 		this._magic.spellbook.push(spellName);

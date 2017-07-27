@@ -72,3 +72,24 @@ Game.ItemMixins.Stackable = {
 	
 };
 
+Game.ItemMixins.Spellbook = {	// Item can teach the player spells
+
+	name: 'Spellbook',
+	init: function(template){
+		console.log(JSON.stringify(template));
+		
+		if (template['spells']){
+			this._spells = template['spells'];
+		} else {
+			let numRndSpells = Math.floor(Math.random() * 6);
+			
+			this._spells = [];
+			for (let i = 0; i < numRndSpells; i++){
+				console.log("pick a random spell name!");
+			}
+			
+			
+		}
+	}
+	
+}

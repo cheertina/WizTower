@@ -89,6 +89,12 @@ Game.Entity.prototype.tryMove = function(x, y, z) {
 		}
 		return true;
 	}else if (tile.isDiggable() && this.hasMixin('Digger')) {
+		if (this._magic.activeSpells.indexOf('tunneling') !== -1){
+			if (this._magic.mana.red > 0){
+				this._magic.mana.red--
+			}
+			else return false;
+		}
 		map.dig(x, y, z);
 		return true;
 	}

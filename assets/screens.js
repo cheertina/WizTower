@@ -25,7 +25,7 @@ Game.Screen.startScreen = {
 			if (inputData.keyCode === ROT.VK_RETURN) {
 				Game.switchScreen(Game.Screen.playScreen);
 			}
-			if (inputData.keyCode !== ROT.VK_RETURN) {
+			if (inputData.keyCode !== ROT.VK_RETURN && inputData.keyCode !== ROT.VK_F12) {
 				Game.switchScreen(Game.Screen.helpScreen);
 			}
 		}
@@ -94,13 +94,14 @@ Game.Screen.playScreen = {
 		// Start the map's engine
 		this._map.getEngine().start();
 		
+		this._player.learnSpell('blink');
+		this._player.learnSpell('tunneling');
+		/*
 		this._player.learnSpell('regen');
 		this._player.learnSpell('heal');
 		this._player.learnSpell('fireball');
 		this._player.learnSpell('drain life');
-		this._player.learnSpell('blink');
-		this._player.learnSpell('tunneling');
-		
+		*/
 		
 	},//enter()
     
@@ -240,7 +241,7 @@ Game.Screen.playScreen = {
 			// NOTE: screenHeight-1 is the last row of the playing field
 			
 			// Stats, row 2
-			let status2_1 = vsprintf('Level: %d, XP: %d', [this._player.getLevel(), this._player.getXp()]);
+			let status2_1 = vsprintf('Level: %d, XP: %d, Altars Available: %d', [this._player.getLevel(), this._player.getXp(), this._player.getAltarsAvailable()]);
 			display.drawText(0, screenHeight+1, '%c{white}%b{black}' + status2_1);
 			// show hunger in row two, right side
 			let hungerState = this._player.getHungerState(false);	// use true for numeric debug. turn counting
@@ -260,6 +261,15 @@ Game.Screen.playScreen = {
 		
 		
 		} 
+		
+		// Alert the player that they have gained a level and require them to press enter to acknowledge
+		if(this._mode == 'level alert'){
+			let alertStr = "Level up! Press [Enter]."
+			display.drawText(Math.floor(screenWidth - alertStr.length)/2 , Math.floor(screenHeight/2), alertStr);
+		}
+		
+		
+		
 		if (usingCursor) { // In either 'look' or 'target' mode, show what's under the cursor
 			let lookText = '';
 			if (cursorIsVisible) {
@@ -315,6 +325,13 @@ Game.Screen.playScreen = {
 					Game.switchScreen(Game.Screen.loseScreen);
 				}
 				return; // Don't respond to any other input
+			}
+			if (this._mode == 'level alert'){
+				if (inputData.keyCode === ROT.VK_RETURN) {
+					this._mode = 'play';
+					Game.refresh();
+				}
+				return;
 			}
 			// In look mode
 			if (this._mode == 'look'){
@@ -402,7 +419,9 @@ Game.Screen.playScreen = {
 				
 				//  Now with unnecessary (optional) braces, for nice folding
 				
+				//---------------------
 				// DEBUG COMMANDS
+				//---------------------
 				
 				case ROT.VK_N:{ // Let's plow through stuff like walls and enemies
 					if (inputData.shiftKey) { 
@@ -416,11 +435,33 @@ Game.Screen.playScreen = {
 					return; 
 				}
 				
-				//
+				//---------------------
 				// END DEBUG
+				//---------------------
 				
+				
+				
+				//---------------------
 				// Testing Commands
+				//---------------------
 				
+				case ROT.VK_Y:{
+					Game.Screen.readBookSelect.setup(this._player, this._player.getItems());
+					this.setSubScreen(Game.Screen.readBookSelect);
+					return
+				}
+				
+				
+				//---------------------
+				// End testing
+				//---------------------
+				
+				
+				
+				
+				//---------------------
+				// Working Commands
+				//---------------------
 				
 				// CAST a spell
 				case ROT.VK_C:{
@@ -436,12 +477,6 @@ Game.Screen.playScreen = {
 					} 
 					return;
 				}
-				
-				
-				
-				// End testing
-				
-				// Working Commands
 				// DROP ITEM
 				case ROT.VK_D: {
 					this.showItemsSubScreen(Game.Screen.dropScreen , this._player.getItems(), "You're not carrying anything to drop.");
@@ -467,8 +502,8 @@ Game.Screen.playScreen = {
 				case ROT.VK_P:{
 					let pos = this._player.getPos();
 					let tile = this._map.getTile(pos.x, pos.y, pos.z);
-					let availableAltars = (this._player._totalAltars - this._player._activeAltars) > 0;
-					if (tile.getName() == 'altar' && tile.isActive() == false && availableAltars){ // if we're on an unactivated altar
+					//let availableAltars = (this._player._totalAltars - this._player._activeAltars) > 0;
+					if (tile.getName() == 'altar' && tile.isActive() == false && this._player.getAltarsAvailable()){ // if we're on an unactivated altar
 						Game.Screen.gainMagic.setup(this._player, pos, tile);
 						this.setSubScreen(Game.Screen.gainMagic);
 					}
@@ -753,35 +788,10 @@ Game.Screen.spellSelection = {
 		for (slot = 0; slot < book.length; slot++){
 			// Assign a letter to each slot in the spellbook
 			let letter = letters.substring(slot, slot+1);
-			dispStr = letter + " - " ;
-			// Mana used to cast
-			let cost = Game.SpellBook.getManaCost(book[slot]);
-			for (color in cost){
-				if (color == 'black'){ dispStr += "%c{black}%b{dimgray}"; }
-				else if (color == 'blue') {dispStr += "%c{cyan}%b{}"; }
-				else if (color == 'green') { dispStr += "%c{lime}%b{}"; }
-				else dispStr += "%c{"+color+"}%b{}"
-				
-				for (let i = 0; i < cost[color]; i++){
-					dispStr += manaDot;
-				}
-			}
-			// Mana reserved while active - a reduction in max mana
-			cost = Game.SpellBook.getManaUsed(book[slot]);
-			let reservedStr = ""
-			for (color in cost){
-				if (color == 'black'){ reservedStr += "%c{black}%b{dimgray}"; }
-				else if (color == 'blue') {reservedStr += "%c{cyan}%b{}"; }
-				else if (color == 'green') { reservedStr += "%c{lime}%b{}"; }
-				else reservedStr += "%c{"+color+"}%b{}"
-				
-				for (let i = 0; i < cost[color]; i++){
-					reservedStr += manaDot;
-				}
-			}
-			if (reservedStr !== ""){ dispStr += "("+reservedStr+")"; }
-			
-			dispStr += "%c{}%b{} "+Game.SpellBook.getName(book[slot], true);
+			let cost = Game.SpellBook.getManaCost(book[slot], true);
+			let reserved = Game.SpellBook.getManaUsed(book[slot], true);
+			let name = Game.SpellBook.getName(book[slot], true);
+			let dispStr = letter + " - " + cost + reserved + " " + name;
 			dispStr += this._entity._magic.isActive(book[slot]) ? " (active)" : "";
 			
 			display.drawText(0, row+2*slot, dispStr);
@@ -790,11 +800,11 @@ Game.Screen.spellSelection = {
 		}
 	},
 	handleInput: function(inputType, inputData){
+		if (inputType === 'keydown' && inputData.keyCode == ROT.VK_ESCAPE){  // Cancel spellcasting
+			Game.Screen.playScreen.setSubScreen(null);
+			return false; 
+		}
 		if (inputType === 'keydown'&& inputData.keyCode >= ROT.VK_A && inputData.keyCode <=ROT.VK_Z){
-			if (inputData.keyCode == ROT.VK_ESCAPE){ 
-				Game.Screen.playScreen.setSubScreen(null);
-				return false; 
-			}
 			let spell = this._entity._magic.spellbook[inputData.keyCode - ROT.VK_A];
 			console.log(spell);
 			
@@ -815,6 +825,32 @@ Game.Screen.spellSelection = {
 		}
 	}
 };
+
+Game.Screen.learnSpell = {
+	setup: function(entity, spellList) { 
+		this._entity = entity; // This should always be the player (?)
+		this._spelList = spellList	// This should be an array of names (not actual spell objects)
+	},
+	render: function(display) { 
+		display.drawText(0,0, "Which spell to learn?");
+		
+		let letters = 'abcdefghijklmnopqrstuvwxyz';
+		let row = 2;
+		for (let i = 0; i < this._spellList.length; i++) {
+			let letter = letters.substring(i);
+			let cost = Game.SpellBook.getManaCost(Game.spellList[i], true);
+			let reserved = Game.SpellBook.getManaUsed(Game.spellList[i], true);
+			let name = Game.SpellBook.getName(Game.spellList[i], true);
+			let dispStr = letter + " - " + cost + reserved + " " + name;
+			
+		}
+		return;
+	},
+	handleInput: function(inputType, inputData) { return; }
+}
+
+
+
 
 // An Item list based on template for different use cases
 // inventory list, pick up, drop, etc.
@@ -1026,7 +1062,17 @@ Game.Screen.wearScreen = new Game.Screen.ItemListScreen({
 	}
 });
 
-	
+Game.Screen.readBookSelect = new Game.Screen.ItemListScreen({
+	caption: 'Read which book?',
+	canSelect: true,
+	multiSelect: false,
+	filterFunction: function(item) { return item && item.hasMixin('Spellbook'); },
+	ok: function(selectedItem){
+		console.log(JSON.stringify(selectedItem));
+		console.log("Can we just change the subScreen to the learnSpell one?  We should be able to...");
+		return true;
+	}
+});	
 
 
 
