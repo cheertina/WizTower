@@ -37,20 +37,25 @@ Game.Screen.helpScreen = {
 	enter: function(){ console.log("Entered the help screen."); },
 	exit: function(){ console.log("Exited the help screen"); },
 	render: function(display){
-		display.drawText(1,1, "%c{yellow}Instructions");
-		display.drawText(1,3, "%c{white}Player control");
-		display.drawText(2,4, "Move with numpad");
-		display.drawText(2,5, "Press 0 or 5 to wait a round");
-		display.drawText(1,7, "%c{white}Actions");
-		display.drawText(2,8, "C: Cast spell");
-		display.drawText(2,9, "D: Drop item");
-		display.drawText(2,10, "E: Eat consumable");
-		display.drawText(2,11, "I: View inventory");
-		display.drawText(2,12, "L: Enter/Exit 'Look' mode");
-		display.drawText(2,13, "W: Wield/wear");
-		display.drawText(2,14, ",: Pick up item");
-		display.drawText(1,16, "%c{white}Other");
-		display.drawText(2,17, "Select item (Inventory screen)");	
+		let i = 1
+		display.drawText(1,i++, "%c{yellow}Instructions");
+		display.drawText(0,i++, ""); // Blank line
+		display.drawText(1,i++, "%c{white}Player control");
+		display.drawText(2,i++, "Move with numpad");
+		display.drawText(2,i++, "Press 0 or 5 to wait a round");
+		display.drawText(1,i++, "%c{white}Actions");
+		display.drawText(2,i++, "C: Cast spell");
+		display.drawText(2,i++, "D: Drop item");
+		display.drawText(2,i++, "E: Eat consumable");
+		display.drawText(2,i++, "I: View inventory");
+		display.drawText(2,i++, "L: Enter/Exit 'Look' mode");
+		display.drawText(2,i++, "R: Ranged Attack (requires ranged weapon)");
+		display.drawText(2,i++, "W: Wield/wear");
+		display.drawText(2,i++, "Y: Read Book");
+		display.drawText(2,i++, ",: Pick up item");
+		display.drawText(0,i++, ""); // Blank line
+		display.drawText(1,i++, "%c{white}Other");
+		display.drawText(2,i++, "Select item (Inventory screen)");	
 		display.drawText(1,24, "Press [Enter] to return");		
 	},
 	handleInput: function (inputType, inputData){
@@ -94,9 +99,9 @@ Game.Screen.playScreen = {
 		// Start the map's engine
 		this._map.getEngine().start();
 		
+		/*
 		this._player.learnSpell('blink');
 		this._player.learnSpell('tunneling');
-		/*
 		this._player.learnSpell('regen');
 		this._player.learnSpell('heal');
 		this._player.learnSpell('fireball');
@@ -153,12 +158,12 @@ Game.Screen.playScreen = {
 			}
 		);
 		
-		
+		let DEBUG_VISION = true;
 		// Iterate through all map cells that fit on the current screen
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
 			for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
 				// Render all tiles that have ever been seen
-				if(true || map.isExplored(x, y, currentDepth)){
+				if(DEBUG_VISION || map.isExplored(x, y, currentDepth)){
 					// Fetch the glyph for the tile 
 					let glyph = this._map.getTile(x, y, currentDepth);
 					let foreground = glyph.getForeground();
@@ -166,7 +171,7 @@ Game.Screen.playScreen = {
 					// If the cell is currently visible, see if there are
 					// items or entities to render instead of the tile glyph
 					
-					if(true || visibleCells[x + ',' + y]){
+					if(DEBUG_VISION || visibleCells[x + ',' + y]){
 						
 						// Check  for items first, so that entities will render
 						// "on top" of them
@@ -471,8 +476,8 @@ Game.Screen.playScreen = {
 						break;
 					}
 					else{
-						Game.Screen.spellSelection.setup(this._player);
-						this.setSubScreen(Game.Screen.spellSelection);
+						Game.Screen.spellSelectionScreen.setup(this._player);
+						this.setSubScreen(Game.Screen.spellSelectionScreen);
 						
 					} 
 					return;
@@ -504,8 +509,8 @@ Game.Screen.playScreen = {
 					let tile = this._map.getTile(pos.x, pos.y, pos.z);
 					//let availableAltars = (this._player._totalAltars - this._player._activeAltars) > 0;
 					if (tile.getName() == 'altar' && tile.isActive() == false && this._player.getAltarsAvailable()){ // if we're on an unactivated altar
-						Game.Screen.gainMagic.setup(this._player, pos, tile);
-						this.setSubScreen(Game.Screen.gainMagic);
+						Game.Screen.gainMagicScreen.setup(this._player, pos, tile);
+						this.setSubScreen(Game.Screen.gainMagicScreen);
 					}
 	
 					return;
@@ -697,7 +702,7 @@ Game.Screen.gainStatScreen = {
 };
 
 // Magic stat gain
-Game.Screen.gainMagic = {
+Game.Screen.gainMagicScreen = {
 	setup: function(entity, pos, tile) {
 		// Must be called before rendering
 		this._entity = entity;
@@ -775,7 +780,7 @@ Game.Screen.gainMagic = {
 	
 };
 
-Game.Screen.spellSelection = {
+Game.Screen.spellSelectionScreen = {
 	setup: function(entity){
 		this._entity = entity;
 	},
@@ -826,10 +831,12 @@ Game.Screen.spellSelection = {
 	}
 };
 
-Game.Screen.learnSpell = {
-	setup: function(entity, spellList) { 
+Game.Screen.learnSpellScreen = {
+	setup: function(entity, selectedItems) { 
+		this._slot = Object.keys(selectedItems)[0];	// We need this to delete empty books
 		this._entity = entity; // This should always be the player (?)
-		this._spelList = spellList	// This should be an array of names (not actual spell objects)
+		// this._spellBook = selectedItems[slot];	// 
+		this._spellList = selectedItems[this._slot]._spells;
 	},
 	render: function(display) { 
 		display.drawText(0,0, "Which spell to learn?");
@@ -837,16 +844,47 @@ Game.Screen.learnSpell = {
 		let letters = 'abcdefghijklmnopqrstuvwxyz';
 		let row = 2;
 		for (let i = 0; i < this._spellList.length; i++) {
-			let letter = letters.substring(i);
-			let cost = Game.SpellBook.getManaCost(Game.spellList[i], true);
-			let reserved = Game.SpellBook.getManaUsed(Game.spellList[i], true);
-			let name = Game.SpellBook.getName(Game.spellList[i], true);
-			let dispStr = letter + " - " + cost + reserved + " " + name;
+			let letter = letters.substring(i,i+1);
+			let cost = Game.SpellBook.getManaCost(this._spellList[i], true);
+			let reserved = Game.SpellBook.getManaUsed(this._spellList[i], true);
+			let name = Game.SpellBook.getName(this._spellList[i], true);
+			let desc = Game.SpellBook.getDesc(this._spellList[i])
+			let dispStr = letter + " - " + cost + reserved + " " + name + " - " + desc;
+			
+			display.drawText(0,row+i, dispStr);
 			
 		}
 		return;
 	},
-	handleInput: function(inputType, inputData) { return; }
+	handleInput: function(inputType, inputData) { 
+		
+		let learned = false;
+		if (inputType === 'keydown' && inputData.keyCode == ROT.VK_ESCAPE){  // Cancel spell learning
+			Game.Screen.playScreen.setSubScreen(null);
+			return false; 
+		}
+		if (inputType === 'keydown'&& inputData.keyCode >= ROT.VK_A && inputData.keyCode <=ROT.VK_Z){
+			let spellName = this._spellList[inputData.keyCode - ROT.VK_A];
+			console.log(spellName);
+			
+			learned = this._entity.learnSpell(spellName);
+			if(learned){
+				this._spellList.splice(inputData.keyCode - ROT.VK_A, 1);
+				
+				if(this._spellList.length == 0){
+					this._entity.removeItem(this._slot);
+				}
+				
+			
+			}
+			
+			
+			Game.Screen.playScreen.setSubScreen(null);
+			
+		}
+		
+		return;
+	}
 }
 
 
@@ -1067,10 +1105,11 @@ Game.Screen.readBookSelect = new Game.Screen.ItemListScreen({
 	canSelect: true,
 	multiSelect: false,
 	filterFunction: function(item) { return item && item.hasMixin('Spellbook'); },
-	ok: function(selectedItem){
-		console.log(JSON.stringify(selectedItem));
-		console.log("Can we just change the subScreen to the learnSpell one?  We should be able to...");
-		return true;
+	ok: function(selectedItems){
+		Game.Screen.learnSpellScreen.setup(this._player, selectedItems);
+		Game.Screen.playScreen.setSubScreen(Game.Screen.learnSpellScreen)
+		
+		// return selectedItems;
 	}
 });	
 

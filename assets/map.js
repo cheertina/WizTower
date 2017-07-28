@@ -114,10 +114,10 @@ Game.Map.prototype.populate = function(){
 		}
 		
 		
+		// And a spellbook on each floor
+		this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook'), z);
 	}
 	
-	// And a spellbook
-	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook'), 0);
 }
 
 Game.Map.prototype.simplePopulate = function() {

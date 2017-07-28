@@ -19,7 +19,7 @@ Game.ItemRepository.define('spellbook', {
 	name: 'spellbook',
 	character: ['#'],
 	foreground: 'cyan',
-	spells: ['heal', 'fireball'],
+	//spells: ['heal', 'fireball'],
 	mixins: [Game.ItemMixins.Spellbook]
 }, {disableRandomCreation: true});
 

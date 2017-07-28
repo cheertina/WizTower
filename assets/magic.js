@@ -130,6 +130,9 @@ Game.SpellBook.getManaUsed = function(name, colorizedString = false){
 	else return this._templates[name].manaUsed;
 }
 
+Game.SpellBook.getSpellList = function(){
+	return Object.keys(this._templates);
+}
 
 /*\ All the spells go here, 
 |*| 

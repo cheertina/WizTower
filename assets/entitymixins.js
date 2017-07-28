@@ -482,12 +482,12 @@ Game.EntityMixins.MagicUser = {
 		//Game.refresh();
 		
 	},
-	readBook: function(bookItem){
-		console.log("TODO: implement readBook()");
-		return;
-	},
 	learnSpell(spellName){
-		this._magic.spellbook.push(spellName);
+		if (this._magic.spellbook.indexOf(spellName) == -1) {
+			this._magic.spellbook.push(spellName);
+			return true;
+		}
+		else return false;
 	}
 };
 
