@@ -15,6 +15,14 @@ String.fromCharCode(644) - sword with hilt - ʄ
 
 */
 
+Game.ItemRepository.define('spellbook', {
+	name: 'spellbook',
+	character: ['#'],
+	foreground: 'cyan',
+	//spells: ['heal', 'fireball'],
+	mixins: [Game.ItemMixins.Spellbook]
+}, {disableRandomCreation: true});
+
 Game.ItemRepository.define('apple', {
 	name: 'apple',
 	character: '%',
@@ -53,7 +61,7 @@ Game.ItemRepository.define('corpse', {
 // Ranged Weapons
 Game.ItemRepository.define('sling', {
 	name: 'sling',
-	character: [')','='],
+	character: ['}','='],
 	forground: 'grey',
 	rangedAttackValue: 2,
 	wieldable: true,

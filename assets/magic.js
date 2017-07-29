@@ -66,7 +66,7 @@ Game.SpellBook = new Game.Repository('spells', Game.Spell);
 
 // SpellBook helper functions
 Game.SpellBook.getName = function(name, colorized = false){
-	if(colorized){
+	if(colorized){	// return a formatted string of the spell's name, colorized
 		let cost = this._templates[name].manaCost;
 		let colors = Object.keys(cost);
 		let textColor;
@@ -82,18 +82,57 @@ Game.SpellBook.getName = function(name, colorized = false){
 	
 		return outStr;
 	}
-	else return this._templates[name].name;
+	else return this._templates[name].name;	// just the name as a bare string
 }
 Game.SpellBook.getDesc = function(name){
 	return this._templates[name].description;
 };
-Game.SpellBook.getManaCost = function(name){
-	return this._templates[name].manaCost;
+
+Game.SpellBook.getManaCost = function(name, colorizedString = false){
+	if(colorizedString){
+		let cost = this._templates[name].manaCost;
+		let manaDot = String.fromCharCode(664)
+		let returnString = "";
+		for (color in cost){
+			if (color == 'black'){ returnString += "%c{black}%b{dimgray}"; }
+			else if (color == 'blue') {returnString += "%c{cyan}%b{}"; }
+			else if (color == 'green') { returnString += "%c{lime}%b{}"; }
+			else returnString += "%c{"+color+"}%b{}"
+			
+			for (let i = 0; i < cost[color]; i++){
+				returnString += manaDot;
+			}
+		}
+		returnString +="%c{}%b{}";
+		return returnString;
+	}
+	
+	else return this._templates[name].manaCost;
 };
-Game.SpellBook.getManaUsed = function(name){
-	return this._templates[name].manaUsed;
+Game.SpellBook.getManaUsed = function(name, colorizedString = false){
+	if(colorizedString){
+		let cost = this._templates[name].manaUsed;
+		let manaDot = String.fromCharCode(664)
+		let returnString = "";
+		for (color in cost){
+			if (color == 'black'){ returnString += "%c{black}%b{dimgray}"; }
+			else if (color == 'blue') {returnString += "%c{cyan}%b{}"; }
+			else if (color == 'green') { returnString += "%c{lime}%b{}"; }
+			else returnString += "%c{"+color+"}%b{}"
+			
+			for (let i = 0; i < cost[color]; i++){
+				returnString += manaDot;
+			}
+		}
+		if (returnString !== "") { returnString = "%c{}%b{}(" + returnString + "%c{}%b{})"; }
+		return returnString;
+	}
+	else return this._templates[name].manaUsed;
 }
 
+Game.SpellBook.getSpellList = function(){
+	return Object.keys(this._templates);
+}
 
 /*\ All the spells go here, 
 |*| 
@@ -130,6 +169,7 @@ Game.SpellBook.define('regen', {
 	manaCost: { green: 2 },
 	onCast: function(target, caster){ return; },
 	buff: function(target){
+		this.name = 'Regeneration';
 		this.duration = 20;
 		this.target = target;
 		this.onExpire= function(){
@@ -161,6 +201,7 @@ Game.SpellBook.define('fireball',{
 		target.heal(-2);
 	},
 	buff: function(target, caster){
+		this.name = 'Burning';
 		this.duration = 9;
 		this.target = target;
 		this.onExpire= function(){ return; };
@@ -220,14 +261,14 @@ Game.SpellBook.define('tunneling', {
 
 Game.SpellBook.define('rancor', {
 	name: 'Rancor',
-	description: "Increases attack damage and toughness - grants Trample",
+	description: "Increases attack damage and grants Trample",
 	targets: 'self',
 	manaCost: { green: 1 },
 	manaUsed: { green: 1 },
 	activeName: 'rancor',
 	bonus: { 
-		mixins: [Game.EntityMixins.Trample]
-		//TODO: increase power and toughness
+		mixins: [Game.EntityMixins.Trample],
+		stats: {attack: 2}
 	}
 });
 

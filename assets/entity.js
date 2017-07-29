@@ -7,11 +7,14 @@ Game.Entity = function(properties){
 	// The DynamicGlyph constructor is where Mixins are added to the object
 	// Some of those mixins require access to the _buffs object
 	// So we add that to the entity before we get around to calling the DG constructor
+	// Same with stats
 	
 	this._buffs = {};
+	this._stats = properties['stats'] || {};
 	
 	// Call the glyph's constructor with our set of properties
 	Game.DynamicGlyph.call(this, properties);
+	
 	
 	// Instantiate Entity-only properties from the passed object
 	this._alive = true;
@@ -89,6 +92,12 @@ Game.Entity.prototype.tryMove = function(x, y, z) {
 		}
 		return true;
 	}else if (tile.isDiggable() && this.hasMixin('Digger')) {
+		if (this._magic.activeSpells.indexOf('tunneling') !== -1){
+			if (this._magic.mana.red > 0){
+				this._magic.mana.red--
+			}
+			else return false;
+		}
 		map.dig(x, y, z);
 		return true;
 	}

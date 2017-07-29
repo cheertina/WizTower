@@ -72,3 +72,29 @@ Game.ItemMixins.Stackable = {
 	
 };
 
+Game.ItemMixins.Spellbook = {	// Item can teach the player spells
+
+	name: 'Spellbook',
+	init: function(template){
+		console.log(JSON.stringify(template));
+		
+		if (template['spells']){
+			this._spells = template['spells'];
+		} else {
+			let numRndSpells = Math.floor(Math.random() * 2) + 1;
+			
+			this._spells = [];
+			let availSpells = Game.SpellBook.getSpellList().randomize();
+			console.log(availSpells);
+			for (let i = 0; i < numRndSpells; i++){
+				let idx = Math.floor(Math.random() * availSpells.length);
+				this._spells.push(availSpells[idx]);
+				availSpells.splice(idx,1);
+				console.log(this._spells);
+			}
+			
+			
+		}
+	}
+	
+}

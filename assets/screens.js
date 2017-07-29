@@ -25,7 +25,7 @@ Game.Screen.startScreen = {
 			if (inputData.keyCode === ROT.VK_RETURN) {
 				Game.switchScreen(Game.Screen.playScreen);
 			}
-			if (inputData.keyCode !== ROT.VK_RETURN) {
+			if (inputData.keyCode !== ROT.VK_RETURN && inputData.keyCode !== ROT.VK_F12) {
 				Game.switchScreen(Game.Screen.helpScreen);
 			}
 		}
@@ -37,20 +37,25 @@ Game.Screen.helpScreen = {
 	enter: function(){ console.log("Entered the help screen."); },
 	exit: function(){ console.log("Exited the help screen"); },
 	render: function(display){
-		display.drawText(1,1, "%c{yellow}Instructions");
-		display.drawText(1,3, "%c{white}Player control");
-		display.drawText(2,4, "Move with numpad");
-		display.drawText(2,5, "Press 0 or 5 to wait a round");
-		display.drawText(1,7, "%c{white}Actions");
-		display.drawText(2,8, "C: Cast spell");
-		display.drawText(2,9, "D: Drop item");
-		display.drawText(2,10, "E: Eat consumable");
-		display.drawText(2,11, "I: View inventory");
-		display.drawText(2,12, "L: Enter/Exit 'Look' mode");
-		display.drawText(2,13, "W: Wield/wear");
-		display.drawText(2,14, ",: Pick up item");
-		display.drawText(1,16, "%c{white}Other");
-		display.drawText(2,17, "Select item (Inventory screen)");	
+		let i = 1
+		display.drawText(1,i++, "%c{yellow}Instructions");
+		display.drawText(0,i++, ""); // Blank line
+		display.drawText(1,i++, "%c{white}Player control");
+		display.drawText(2,i++, "Move with numpad");
+		display.drawText(2,i++, "Press 0 or 5 to wait a round");
+		display.drawText(1,i++, "%c{white}Actions");
+		display.drawText(2,i++, "C: Cast spell");
+		display.drawText(2,i++, "D: Drop item");
+		display.drawText(2,i++, "E: Eat consumable");
+		display.drawText(2,i++, "I: View inventory");
+		display.drawText(2,i++, "L: Enter/Exit 'Look' mode");
+		display.drawText(2,i++, "R: Ranged Attack (requires ranged weapon)");
+		display.drawText(2,i++, "W: Wield/wear");
+		display.drawText(2,i++, "Y: Read Book");
+		display.drawText(2,i++, ",: Pick up item");
+		display.drawText(0,i++, ""); // Blank line
+		display.drawText(1,i++, "%c{white}Other");
+		display.drawText(2,i++, "Select item (Inventory screen)");	
 		display.drawText(1,24, "Press [Enter] to return");		
 	},
 	handleInput: function (inputType, inputData){
@@ -72,6 +77,7 @@ Game.Screen.playScreen = {
     _player: null,
 	_gameEnded: false,
 	_subScreen: null,
+	_DEBUG_PLAY: false,
 	
 	// For looking around, mode='look'
 	_cursor: {},
@@ -81,9 +87,9 @@ Game.Screen.playScreen = {
 		console.log( "Entered playScreen." );
 		
 		var map = [];
-		let width  = 80;
-		let height = 24;
-		let depth = 6;
+		let width  = 140;
+		let height = 48;
+		let depth = 7;	// making it to the last floor wins the game (for now)
 		// Use our Builder to make the map
 		var tiles = new Game.Builder(width, height, depth).getTiles();
 		
@@ -94,13 +100,14 @@ Game.Screen.playScreen = {
 		// Start the map's engine
 		this._map.getEngine().start();
 		
+		/*
+		this._player.learnSpell('blink');
+		this._player.learnSpell('tunneling');
 		this._player.learnSpell('regen');
 		this._player.learnSpell('heal');
 		this._player.learnSpell('fireball');
 		this._player.learnSpell('drain life');
-		this._player.learnSpell('blink');
-		this._player.learnSpell('tunneling');
-		
+		*/
 		
 	},//enter()
     
@@ -152,12 +159,11 @@ Game.Screen.playScreen = {
 			}
 		);
 		
-		
 		// Iterate through all map cells that fit on the current screen
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
 			for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
 				// Render all tiles that have ever been seen
-				if(true || map.isExplored(x, y, currentDepth)){
+				if(this.DEBUG_PLAY || map.isExplored(x, y, currentDepth)){
 					// Fetch the glyph for the tile 
 					let glyph = this._map.getTile(x, y, currentDepth);
 					let foreground = glyph.getForeground();
@@ -165,7 +171,7 @@ Game.Screen.playScreen = {
 					// If the cell is currently visible, see if there are
 					// items or entities to render instead of the tile glyph
 					
-					if(true || visibleCells[x + ',' + y]){
+					if(this.DEBUG_PLAY || visibleCells[x + ',' + y] ){
 						
 						// Check  for items first, so that entities will render
 						// "on top" of them
@@ -184,7 +190,7 @@ Game.Screen.playScreen = {
 						foreground = glyph.getForeground();
 					} else {
 						// Cell is not currently visible, but has been seen before
-						foreground = 'dimGray';
+						if (glyph.getName() !== 'altar') { foreground = 'dimGray'; }
 					}
 					// See if we need to render the cursor, too
 					// box the character we want to show, just in case
@@ -240,7 +246,7 @@ Game.Screen.playScreen = {
 			// NOTE: screenHeight-1 is the last row of the playing field
 			
 			// Stats, row 2
-			let status2_1 = vsprintf('Level: %d, XP: %d', [this._player.getLevel(), this._player.getXp()]);
+			let status2_1 = vsprintf('Level: %d, XP: %d, Altars Available: %d', [this._player.getLevel(), this._player.getXp(), this._player.getAltarsAvailable()]);
 			display.drawText(0, screenHeight+1, '%c{white}%b{black}' + status2_1);
 			// show hunger in row two, right side
 			let hungerState = this._player.getHungerState(false);	// use true for numeric debug. turn counting
@@ -260,6 +266,15 @@ Game.Screen.playScreen = {
 		
 		
 		} 
+		
+		// Alert the player that they have gained a level and require them to press enter to acknowledge
+		if(this._mode == 'level alert'){
+			let alertStr = "Level up! Press [Enter]."
+			display.drawText(Math.floor(screenWidth - alertStr.length)/2 , Math.floor(screenHeight/2), alertStr);
+		}
+		
+		
+		
 		if (usingCursor) { // In either 'look' or 'target' mode, show what's under the cursor
 			let lookText = '';
 			if (cursorIsVisible) {
@@ -315,6 +330,13 @@ Game.Screen.playScreen = {
 					Game.switchScreen(Game.Screen.loseScreen);
 				}
 				return; // Don't respond to any other input
+			}
+			if (this._mode == 'level alert'){
+				if (inputData.keyCode === ROT.VK_RETURN) {
+					this._mode = 'play';
+					Game.refresh();
+				}
+				return;
 			}
 			// In look mode
 			if (this._mode == 'look'){
@@ -402,25 +424,51 @@ Game.Screen.playScreen = {
 				
 				//  Now with unnecessary (optional) braces, for nice folding
 				
+				//---------------------
 				// DEBUG COMMANDS
+				//---------------------
 				
 				case ROT.VK_N:{ // Let's plow through stuff like walls and enemies
-					if (inputData.shiftKey) { 
-						this._player.removeMixin(Game.EntityMixins.Digger);
-						this._player.removeMixin(Game.EntityMixins.Trample);
+					if (this.DEBUG_PLAY){
+						if (inputData.shiftKey) { 
+							this._player.removeMixin(Game.EntityMixins.Digger);
+							this._player.removeMixin(Game.EntityMixins.Trample);
+						}
+						else{
+							this._player.addMixin(Game.EntityMixins.Digger); 
+							this._player.addMixin(Game.EntityMixins.Trample); 
+						} 
+						return; 
 					}
-					else{
-						this._player.addMixin(Game.EntityMixins.Digger); 
-						this._player.addMixin(Game.EntityMixins.Trample); 
-					} 
-					return; 
 				}
 				
-				//
+				//---------------------
 				// END DEBUG
+				//---------------------
 				
+				
+				
+				//---------------------
 				// Testing Commands
+				//---------------------
 				
+				case ROT.VK_Y:{
+					Game.Screen.readBookSelect.setup(this._player, this._player.getItems());
+					this.setSubScreen(Game.Screen.readBookSelect);
+					return
+				}
+				
+				
+				//---------------------
+				// End testing
+				//---------------------
+				
+				
+				
+				
+				//---------------------
+				// Working Commands
+				//---------------------
 				
 				// CAST a spell
 				case ROT.VK_C:{
@@ -430,51 +478,50 @@ Game.Screen.playScreen = {
 						break;
 					}
 					else{
-						Game.Screen.spellSelection.setup(this._player);
-						this.setSubScreen(Game.Screen.spellSelection);
+						Game.Screen.spellSelectionScreen.setup(this._player);
+						this.setSubScreen(Game.Screen.spellSelectionScreen);
 						
 					} 
 					return;
 				}
-				
-				
-				
-				// End testing
-				
-				// Working Commands
+
 				// DROP ITEM
 				case ROT.VK_D: {
 					this.showItemsSubScreen(Game.Screen.dropScreen , this._player.getItems(), "You're not carrying anything to drop.");
 					return;
 				}
+
 				// EAT COMESTIBLE
 				case ROT.VK_E: {
 					this.showItemsSubScreen(Game.Screen.eatScreen , this._player.getItems(), "You're not carrying anything to eat.");
 					return;
 				}
+
 				// INVENTORY
 				case ROT.VK_I: {
 					this.showItemsSubScreen(Game.Screen.inventoryScreen , this._player.getItems(), "You are not carrying anything.");
 					return;
 				}
+
 				// LOOK
 				case ROT.VK_L: {
 					this._mode = 'look';
 					Game.refresh();
 					return;
 				}
+
 				// PRAY - activate altars
 				case ROT.VK_P:{
 					let pos = this._player.getPos();
 					let tile = this._map.getTile(pos.x, pos.y, pos.z);
-					let availableAltars = (this._player._totalAltars - this._player._activeAltars) > 0;
-					if (tile.getName() == 'altar' && tile.isActive() == false && availableAltars){ // if we're on an unactivated altar
-						Game.Screen.gainMagic.setup(this._player, pos, tile);
-						this.setSubScreen(Game.Screen.gainMagic);
+					if (tile.getName() == 'altar' && tile.isActive() == false && this._player.getAltarsAvailable()){ // if we're on an unactivated altar
+						Game.Screen.gainMagicScreen.setup(this._player, pos, tile);
+						this.setSubScreen(Game.Screen.gainMagicScreen);
 					}
 	
 					return;
 				}
+
 				// RANGED ATTACK
 				case ROT.VK_R:{ 
 					if(!this._player.getRangedWeapon()){
@@ -491,6 +538,7 @@ Game.Screen.playScreen = {
 					Game.refresh();
 					return;
 				}
+
 				// {none} WIELD
 				// {shift} WEAR
 				case ROT.VK_W: {
@@ -501,6 +549,7 @@ Game.Screen.playScreen = {
 					}
 					return;
 				}
+
 				// {none} PICK UP ITEMS
 				// {shift} GO UP STAIRS
 				case ROT.VK_COMMA: {
@@ -524,11 +573,16 @@ Game.Screen.playScreen = {
 					}
 					return;
 				}
+
 				// {none} No function
 				// {shift}: GO DOWN STAIRS
 				case ROT.VK_PERIOD: {
 					if (inputData.shiftKey){
 						this.move(0, 0, 1);
+						if (this._player.getZ() == 6) {
+							// Victory!
+							Game.switchScreen(Game.Screen.winScreen);
+						}
 						break;
 					}
 				}
@@ -662,7 +716,7 @@ Game.Screen.gainStatScreen = {
 };
 
 // Magic stat gain
-Game.Screen.gainMagic = {
+Game.Screen.gainMagicScreen = {
 	setup: function(entity, pos, tile) {
 		// Must be called before rendering
 		this._entity = entity;
@@ -723,6 +777,7 @@ Game.Screen.gainMagic = {
 				
 			if (activated){
 				this._entity._magic.increaseMaxMana(actColor);
+				this._entity._activeAltars++;
 				Game.Screen.playScreen.setSubScreen(undefined);
 				
 				
@@ -740,7 +795,7 @@ Game.Screen.gainMagic = {
 	
 };
 
-Game.Screen.spellSelection = {
+Game.Screen.spellSelectionScreen = {
 	setup: function(entity){
 		this._entity = entity;
 	},
@@ -753,35 +808,10 @@ Game.Screen.spellSelection = {
 		for (slot = 0; slot < book.length; slot++){
 			// Assign a letter to each slot in the spellbook
 			let letter = letters.substring(slot, slot+1);
-			dispStr = letter + " - " ;
-			// Mana used to cast
-			let cost = Game.SpellBook.getManaCost(book[slot]);
-			for (color in cost){
-				if (color == 'black'){ dispStr += "%c{black}%b{dimgray}"; }
-				else if (color == 'blue') {dispStr += "%c{cyan}%b{}"; }
-				else if (color == 'green') { dispStr += "%c{lime}%b{}"; }
-				else dispStr += "%c{"+color+"}%b{}"
-				
-				for (let i = 0; i < cost[color]; i++){
-					dispStr += manaDot;
-				}
-			}
-			// Mana reserved while active - a reduction in max mana
-			cost = Game.SpellBook.getManaUsed(book[slot]);
-			let reservedStr = ""
-			for (color in cost){
-				if (color == 'black'){ reservedStr += "%c{black}%b{dimgray}"; }
-				else if (color == 'blue') {reservedStr += "%c{cyan}%b{}"; }
-				else if (color == 'green') { reservedStr += "%c{lime}%b{}"; }
-				else reservedStr += "%c{"+color+"}%b{}"
-				
-				for (let i = 0; i < cost[color]; i++){
-					reservedStr += manaDot;
-				}
-			}
-			if (reservedStr !== ""){ dispStr += "("+reservedStr+")"; }
-			
-			dispStr += "%c{}%b{} "+Game.SpellBook.getName(book[slot], true);
+			let cost = Game.SpellBook.getManaCost(book[slot], true);
+			let reserved = Game.SpellBook.getManaUsed(book[slot], true);
+			let name = Game.SpellBook.getName(book[slot], true);
+			let dispStr = letter + " - " + cost + reserved + " " + name;
 			dispStr += this._entity._magic.isActive(book[slot]) ? " (active)" : "";
 			
 			display.drawText(0, row+2*slot, dispStr);
@@ -790,11 +820,11 @@ Game.Screen.spellSelection = {
 		}
 	},
 	handleInput: function(inputType, inputData){
+		if (inputType === 'keydown' && inputData.keyCode == ROT.VK_ESCAPE){  // Cancel spellcasting
+			Game.Screen.playScreen.setSubScreen(null);
+			return false; 
+		}
 		if (inputType === 'keydown'&& inputData.keyCode >= ROT.VK_A && inputData.keyCode <=ROT.VK_Z){
-			if (inputData.keyCode == ROT.VK_ESCAPE){ 
-				Game.Screen.playScreen.setSubScreen(null);
-				return false; 
-			}
 			let spell = this._entity._magic.spellbook[inputData.keyCode - ROT.VK_A];
 			console.log(spell);
 			
@@ -815,6 +845,65 @@ Game.Screen.spellSelection = {
 		}
 	}
 };
+
+Game.Screen.learnSpellScreen = {
+	setup: function(entity, selectedItems) { 
+		this._slot = Object.keys(selectedItems)[0];	// We need this to delete empty books
+		this._entity = entity; // This should always be the player (?)
+		// this._spellBook = selectedItems[slot];	// 
+		this._spellList = selectedItems[this._slot]._spells;
+	},
+	render: function(display) { 
+		display.drawText(0,0, "Which spell to learn?");
+		
+		let letters = 'abcdefghijklmnopqrstuvwxyz';
+		let row = 2;
+		for (let i = 0; i < this._spellList.length; i++) {
+			let letter = letters.substring(i,i+1);
+			let cost = Game.SpellBook.getManaCost(this._spellList[i], true);
+			let reserved = Game.SpellBook.getManaUsed(this._spellList[i], true);
+			let name = Game.SpellBook.getName(this._spellList[i], true);
+			let desc = Game.SpellBook.getDesc(this._spellList[i])
+			let dispStr = letter + " - " + cost + reserved + " " + name + " - " + desc;
+			
+			display.drawText(0,row+i, dispStr);
+			
+		}
+		return;
+	},
+	handleInput: function(inputType, inputData) { 
+		
+		let learned = false;
+		if (inputType === 'keydown' && inputData.keyCode == ROT.VK_ESCAPE){  // Cancel spell learning
+			Game.Screen.playScreen.setSubScreen(null);
+			return false; 
+		}
+		if (inputType === 'keydown'&& inputData.keyCode >= ROT.VK_A && inputData.keyCode <=ROT.VK_Z){
+			let spellName = this._spellList[inputData.keyCode - ROT.VK_A];
+			console.log(spellName);
+			
+			learned = this._entity.learnSpell(spellName);
+			if(learned){
+				this._spellList.splice(inputData.keyCode - ROT.VK_A, 1);
+				
+				// Experimenting with a book only giving you one spell
+				if(this._spellList.length == 0){
+				}
+				// move this back inside the {} to revert
+				this._entity.removeItem(this._slot);
+			}
+			
+			
+			Game.Screen.playScreen.setSubScreen(null);
+			
+		}
+		
+		return;
+	}
+}
+
+
+
 
 // An Item list based on template for different use cases
 // inventory list, pick up, drop, etc.
@@ -1026,7 +1115,18 @@ Game.Screen.wearScreen = new Game.Screen.ItemListScreen({
 	}
 });
 
-	
+Game.Screen.readBookSelect = new Game.Screen.ItemListScreen({
+	caption: 'Read which book?',
+	canSelect: true,
+	multiSelect: false,
+	filterFunction: function(item) { return item && item.hasMixin('Spellbook'); },
+	ok: function(selectedItems){
+		Game.Screen.learnSpellScreen.setup(this._player, selectedItems);
+		Game.Screen.playScreen.setSubScreen(Game.Screen.learnSpellScreen)
+		
+		// return selectedItems;
+	}
+});	
 
 
 
