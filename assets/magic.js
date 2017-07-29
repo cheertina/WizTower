@@ -169,6 +169,7 @@ Game.SpellBook.define('regen', {
 	manaCost: { green: 2 },
 	onCast: function(target, caster){ return; },
 	buff: function(target){
+		this.name = 'Regeneration';
 		this.duration = 20;
 		this.target = target;
 		this.onExpire= function(){
@@ -200,6 +201,7 @@ Game.SpellBook.define('fireball',{
 		target.heal(-2);
 	},
 	buff: function(target, caster){
+		this.name = 'Burning';
 		this.duration = 9;
 		this.target = target;
 		this.onExpire= function(){ return; };
@@ -259,14 +261,14 @@ Game.SpellBook.define('tunneling', {
 
 Game.SpellBook.define('rancor', {
 	name: 'Rancor',
-	description: "Increases attack damage and toughness - grants Trample",
+	description: "Increases attack damage and grants Trample",
 	targets: 'self',
 	manaCost: { green: 1 },
 	manaUsed: { green: 1 },
 	activeName: 'rancor',
 	bonus: { 
-		mixins: [Game.EntityMixins.Trample]
-		//TODO: increase power and toughness
+		mixins: [Game.EntityMixins.Trample],
+		stats: {attack: 2}
 	}
 });
 

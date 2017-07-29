@@ -7,7 +7,7 @@ Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 	name: 'Attacker',
 	groupName: 'Attacker',
 	init: function(template){
-		this._attackValue = template['attackValue'] || 1;
+		if (!this._stats.hasOwnProperty('attack')) { this._stats.attack = 1; }
 	},
 	getAttackValue: function(){
 		let modifier = 0;
@@ -17,7 +17,7 @@ Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 			if (this.getWeapon()) { modifier += this.getWeapon().getAttackValue() }
 			if (this.getRangedWeapon()) { modifier += this.getRangedWeapon().getAttackValue() }
 		}
-		return this._attackValue + modifier;
+		return this._stats.attack + modifier;
 	},
 	getRangedAttackValue: function(){
 		let modifier = 0;
@@ -27,7 +27,7 @@ Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 			if (this.getWeapon()) { modifier += this.getWeapon().getRangedAttackValue() }
 			if (this.getRangedWeapon()) { modifier += this.getRangedWeapon().getRangedAttackValue() }
 		}
-		return this._attackValue + modifier;
+		return this._stats.attack + modifier;
 	},
 	attack: function(target){
 		if(target.hasMixin('Destructible')){
@@ -62,24 +62,26 @@ Game.EntityMixins.Attacker = { // Entity can attack and cause damage
 			}
 		}
 	},
-	increaseAttackValue: function(value){
+	adjustAttackValue: function(value){
 		// If no value was passed, default to +2
 		value = value || 2;
 		// Add it to the current Attack VAlue
-		this._attackValue += value;
-		Game.sendMessage(this, "You feel stronger!");
+		this._stats.attack += value;
+		if (value > 0) { Game.sendMessage(this, "You feel stronger!"); }
+		if (value < 0) { Game.sendMessage(this, "You feel weaker!"); }
 	}
 } // Attacker
 
 Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 	name: 'Destructible',
 	init: function(template) {
-		this._maxHp = template['maxHp'] || 10;
-		this._hp = template['Hp'] || this._maxHp;
-		this._defenseValue = template['defenseValue'] || 0;
+		// Set default values if we didn't put them on the template
+		if (!this._stats.hasOwnProperty('maxHp')) { this._stats.maxHp = 10; }
+		if (!this._stats.hasOwnProperty('hp')) { this._stats.hp = this._stats.maxHp; }
+		if (!this._stats.hasOwnProperty('defense')) { this._stats.defense = 0; }
 	},
-	getHp: function() {	return this._hp; },
-	getMaxHp: function(){ return this._maxHp; },
+	getHp: function() {	return this._stats.hp; },
+	getMaxHp: function(){ return this._stats.maxHp; },
 	getDefenseValue: function(){
 		let modifier = 0;
 		// Take weapons/armor into consideration, if neccessary
@@ -87,12 +89,12 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 			if (this.getWeapon()) { modifier += this.getWeapon().getDefenseValue() }
 			if (this.getArmor()) { modifier += this.getArmor().getDefenseValue() }
 		}
-		return this._defenseValue + modifier;
+		return this._stats.defense + modifier;
 	},
 	takeDamage: function(attacker, damage) {
-		this._hp -= damage;
+		this._stats.hp -= damage;
 		// If hp drops to 0 or less, remove ourselves from the map via Game.Entity.kill()
-		if (this._hp <= 0){
+		if (this._stats.hp <= 0){
 			Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
 			// DEBUG console.log(attacker.getName() + " kills " + this.getName());
 			// Drop a corpse, if necessary
@@ -107,11 +109,11 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 				if (exp > 0) { attacker.giveXp(exp); }
 			}
 		}
-	},
+	},	// TODO: Move Hp and maxHp into the _stats block?
 	heal: function(healVal){  // healVal can be negative for non-attack damage (starving, poison, etc.)
 		healVal = healVal || 1;
-		this._hp = Math.min(this._hp + healVal, this._maxHp);
-		if (this._hp <= 0){
+		this._stats.hp = Math.min(this._stats.hp + healVal, this._stats.maxHp);
+		if (this._stats.hp <= 0){
 			Game.sendMessage(this, 'You died!');
 			if (this.hasMixin(Game.EntityMixins.CorpseDropper)) {
 				this.tryDropCorpse();
@@ -119,14 +121,14 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
             this.kill();
 		}
 	},
-	increaseDefenseValue: function(value){
+	adjustDefenseValue: function(value){
 		value = value || 2;
-		this._defenseValue += value;
+		this._stats.defense += value;
 		Game.sendMessage(this, "You feel tougher!");
 	},
-	increaseMaxHp: function(value) {
+	adjustMaxHp: function(value) {
 		value = value || 10;
-		this._maxHp += value;
+		this._stats.maxHp += value;
 		this.heal(value);
 		Game.sendMessage(this, "You feel healthier!");
 	}
@@ -196,10 +198,10 @@ Game.EntityMixins.Sight = { // Signifies that our entity posseses a field of vis
 	name: 'Sight',
 	groupName: 'Sight',
 	init: function(template){
-		this._sightRadius = template['sightRadius'] || 5;
+		if (!this._stats.hasOwnProperty('sightRadius')) { this._stats.sightRadius = 5 }
 	},
 	getSightRadius: function() {
-		return this._sightRadius;
+		return this._stats.sightRadius;
 	},
 	canSee: function(entity) {
 		// If not on the same map and floor, no need to continue
@@ -214,7 +216,7 @@ Game.EntityMixins.Sight = { // Signifies that our entity posseses a field of vis
 		// If we're not within sight radius (pythagorean), no point
 		if ((targetX - this._x) * (targetX - this._x) +
 			(targetY - this._y) * (targetY - this._y) > 
-			(this._sightRadius * this._sightRadius)) {
+			(this._stats.sightRadius * this._stats.sightRadius)) {
 			return false;
 		}
 		
@@ -230,9 +232,9 @@ Game.EntityMixins.Sight = { // Signifies that our entity posseses a field of vis
 			});
 		return found;
 	},
-	increaseSightRadius: function(value){
+	adjustSightRadius: function(value){
 		value = value || 1;
-		this._sightRadius += value;
+		this._stats.sightRadius += value;
 		Game.sendMessage(this, "You become more aware of your surroundings!")
 	}
 };
@@ -311,14 +313,14 @@ Game.EntityMixins.ExperienceGainer = {
 		// Determine what stats can be leveled up
 		this._statOptions = [];
 		if (this.hasMixin('Attacker')) {
-			this._statOptions.push(['Increase attack value', this.increaseAttackValue]); 
+			this._statOptions.push(['Increase attack value', this.adjustAttackValue]); 
 		}
 		if (this.hasMixin('Destructible')) { 
-			this._statOptions.push(['Increase defense value', this.increaseDefenseValue]);
-			this._statOptions.push(['Increase maximum health', this.increaseMaxHp]); 
+			this._statOptions.push(['Increase defense value', this.adjustDefenseValue]);
+			this._statOptions.push(['Increase maximum health', this.adjustMaxHp]); 
 		}
 		if (this.hasMixin('Sight')) {
-			this._statOptions.push(['Increase sight radius', this.increaseSightRadius]);
+			this._statOptions.push(['Increase sight radius', this.adjustSightRadius]);
 		}
 	},
 	getLevel: function(){ return this._level; },
@@ -343,7 +345,7 @@ Game.EntityMixins.ExperienceGainer = {
 		if(levelsGained) {
 			Game.sendMessage(this, "You advance to level %d.", [this._level]);
 			// Heal the entity, if possible
-			if (this.hasMixin('Destructible')) { this.heal(this._maxHp); }
+			if (this.hasMixin('Destructible')) { this.heal(this._stats.maxHp); }
 			if (this.hasMixin('StatGainer')) {
 				this.onGainLevel();
 			}
@@ -449,7 +451,11 @@ Game.EntityMixins.MagicUser = {
 				for (color in spell._manaUsed){
 					target._magic.maxMana[color] += spell._manaUsed[color];
 				}
+				// Revert stat bonuses/penalties
 				
+				for (stat in spell._bonus.stats){
+					target._stats[stat] -= spell._bonus.stats[stat];
+				}
 				return;
 				
 			// If not, activate it
@@ -461,7 +467,10 @@ Game.EntityMixins.MagicUser = {
 				for (color in spell._manaUsed){
 					target._magic.maxMana[color] -= spell._manaUsed[color];
 				}
-
+				for (stat in spell._bonus.stats){
+					target._stats[stat] += spell._bonus.stats[stat];
+				}
+				
 			}
 		}
 		
@@ -473,7 +482,8 @@ Game.EntityMixins.MagicUser = {
 		
 		// A buff is a turn-based effect - either a per-turn, or a one-shot on a timer
 		if (spell.hasBuff()){
-			target._buffs[spellName] = new spell._buff(target, this);// 'this' is the caster
+			let newBuff =  new spell._buff(target, this);// 'this' is the caster
+			target._buffs[newBuff.name] = newBuff;
 		}
 		
 		castMsg = vsprintf("You cast %s on %s", 

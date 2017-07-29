@@ -77,6 +77,7 @@ Game.Screen.playScreen = {
     _player: null,
 	_gameEnded: false,
 	_subScreen: null,
+	_DEBUG_PLAY: false,
 	
 	// For looking around, mode='look'
 	_cursor: {},
@@ -86,9 +87,9 @@ Game.Screen.playScreen = {
 		console.log( "Entered playScreen." );
 		
 		var map = [];
-		let width  = 80;
-		let height = 24;
-		let depth = 6;
+		let width  = 140;
+		let height = 48;
+		let depth = 7;	// making it to the last floor wins the game (for now)
 		// Use our Builder to make the map
 		var tiles = new Game.Builder(width, height, depth).getTiles();
 		
@@ -158,12 +159,11 @@ Game.Screen.playScreen = {
 			}
 		);
 		
-		let DEBUG_VISION = true;
 		// Iterate through all map cells that fit on the current screen
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
 			for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
 				// Render all tiles that have ever been seen
-				if(DEBUG_VISION || map.isExplored(x, y, currentDepth)){
+				if(this.DEBUG_PLAY || map.isExplored(x, y, currentDepth)){
 					// Fetch the glyph for the tile 
 					let glyph = this._map.getTile(x, y, currentDepth);
 					let foreground = glyph.getForeground();
@@ -171,7 +171,7 @@ Game.Screen.playScreen = {
 					// If the cell is currently visible, see if there are
 					// items or entities to render instead of the tile glyph
 					
-					if(DEBUG_VISION || visibleCells[x + ',' + y]){
+					if(this.DEBUG_PLAY || visibleCells[x + ',' + y] ){
 						
 						// Check  for items first, so that entities will render
 						// "on top" of them
@@ -190,7 +190,7 @@ Game.Screen.playScreen = {
 						foreground = glyph.getForeground();
 					} else {
 						// Cell is not currently visible, but has been seen before
-						foreground = 'dimGray';
+						if (glyph.getName() !== 'altar') { foreground = 'dimGray'; }
 					}
 					// See if we need to render the cursor, too
 					// box the character we want to show, just in case
@@ -429,15 +429,17 @@ Game.Screen.playScreen = {
 				//---------------------
 				
 				case ROT.VK_N:{ // Let's plow through stuff like walls and enemies
-					if (inputData.shiftKey) { 
-						this._player.removeMixin(Game.EntityMixins.Digger);
-						this._player.removeMixin(Game.EntityMixins.Trample);
+					if (this.DEBUG_PLAY){
+						if (inputData.shiftKey) { 
+							this._player.removeMixin(Game.EntityMixins.Digger);
+							this._player.removeMixin(Game.EntityMixins.Trample);
+						}
+						else{
+							this._player.addMixin(Game.EntityMixins.Digger); 
+							this._player.addMixin(Game.EntityMixins.Trample); 
+						} 
+						return; 
 					}
-					else{
-						this._player.addMixin(Game.EntityMixins.Digger); 
-						this._player.addMixin(Game.EntityMixins.Trample); 
-					} 
-					return; 
 				}
 				
 				//---------------------
@@ -482,32 +484,36 @@ Game.Screen.playScreen = {
 					} 
 					return;
 				}
+
 				// DROP ITEM
 				case ROT.VK_D: {
 					this.showItemsSubScreen(Game.Screen.dropScreen , this._player.getItems(), "You're not carrying anything to drop.");
 					return;
 				}
+
 				// EAT COMESTIBLE
 				case ROT.VK_E: {
 					this.showItemsSubScreen(Game.Screen.eatScreen , this._player.getItems(), "You're not carrying anything to eat.");
 					return;
 				}
+
 				// INVENTORY
 				case ROT.VK_I: {
 					this.showItemsSubScreen(Game.Screen.inventoryScreen , this._player.getItems(), "You are not carrying anything.");
 					return;
 				}
+
 				// LOOK
 				case ROT.VK_L: {
 					this._mode = 'look';
 					Game.refresh();
 					return;
 				}
+
 				// PRAY - activate altars
 				case ROT.VK_P:{
 					let pos = this._player.getPos();
 					let tile = this._map.getTile(pos.x, pos.y, pos.z);
-					//let availableAltars = (this._player._totalAltars - this._player._activeAltars) > 0;
 					if (tile.getName() == 'altar' && tile.isActive() == false && this._player.getAltarsAvailable()){ // if we're on an unactivated altar
 						Game.Screen.gainMagicScreen.setup(this._player, pos, tile);
 						this.setSubScreen(Game.Screen.gainMagicScreen);
@@ -515,6 +521,7 @@ Game.Screen.playScreen = {
 	
 					return;
 				}
+
 				// RANGED ATTACK
 				case ROT.VK_R:{ 
 					if(!this._player.getRangedWeapon()){
@@ -531,6 +538,7 @@ Game.Screen.playScreen = {
 					Game.refresh();
 					return;
 				}
+
 				// {none} WIELD
 				// {shift} WEAR
 				case ROT.VK_W: {
@@ -541,6 +549,7 @@ Game.Screen.playScreen = {
 					}
 					return;
 				}
+
 				// {none} PICK UP ITEMS
 				// {shift} GO UP STAIRS
 				case ROT.VK_COMMA: {
@@ -564,11 +573,16 @@ Game.Screen.playScreen = {
 					}
 					return;
 				}
+
 				// {none} No function
 				// {shift}: GO DOWN STAIRS
 				case ROT.VK_PERIOD: {
 					if (inputData.shiftKey){
 						this.move(0, 0, 1);
+						if (this._player.getZ() == 6) {
+							// Victory!
+							Game.switchScreen(Game.Screen.winScreen);
+						}
 						break;
 					}
 				}
@@ -763,6 +777,7 @@ Game.Screen.gainMagicScreen = {
 				
 			if (activated){
 				this._entity._magic.increaseMaxMana(actColor);
+				this._entity._activeAltars++;
 				Game.Screen.playScreen.setSubScreen(undefined);
 				
 				
@@ -871,11 +886,11 @@ Game.Screen.learnSpellScreen = {
 			if(learned){
 				this._spellList.splice(inputData.keyCode - ROT.VK_A, 1);
 				
+				// Experimenting with a book only giving you one spell
 				if(this._spellList.length == 0){
-					this._entity.removeItem(this._slot);
 				}
-				
-			
+				// move this back inside the {} to revert
+				this._entity.removeItem(this._slot);
 			}
 			
 			

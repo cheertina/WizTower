@@ -81,7 +81,7 @@ Game.ItemMixins.Spellbook = {	// Item can teach the player spells
 		if (template['spells']){
 			this._spells = template['spells'];
 		} else {
-			let numRndSpells = Math.floor(Math.random() * 6);
+			let numRndSpells = Math.floor(Math.random() * 2) + 1;
 			
 			this._spells = [];
 			let availSpells = Game.SpellBook.getSpellList().randomize();
@@ -90,8 +90,8 @@ Game.ItemMixins.Spellbook = {	// Item can teach the player spells
 				let idx = Math.floor(Math.random() * availSpells.length);
 				this._spells.push(availSpells[idx]);
 				availSpells.splice(idx,1);
+				console.log(this._spells);
 			}
-			console.log(this._spells);
 			
 			
 		}
