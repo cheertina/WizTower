@@ -19,11 +19,10 @@ A roguelike using the ROT.js library.  Following a few different tutorials as I 
 		3. Prioritize targets
 		
 # Magic system
-	* Mana
-	* Spells
-	* Leylines
+	* Mana - Working!
+	* Spells - Working!
 	
 # Other
-	* Ranged attacks
-		Animation
+	* Ranged attacks - Working!
+		Animation - maybe someday
 	* Alternate/Additional dungeon layouts
