@@ -10,11 +10,16 @@ Game.Entity = function(properties){
 	// Same with stats
 	
 	this._buffs = {};
-	this._stats = properties['stats'] || {};
-	
+	this._stats = {};
 	// Call the glyph's constructor with our set of properties
 	Game.DynamicGlyph.call(this, properties);
 	
+	// If you try to assign the whole stats object at once, you get a reference
+	// and then all creatures of the same type share stats - including hp.
+	// This doesn't work out well, so assign them one piece at a time - by value.
+	for (key in properties['stats']){
+		this._stats[key] = properties['stats'][key];
+	}
 	
 	// Instantiate Entity-only properties from the passed object
 	this._alive = true;
@@ -24,6 +29,7 @@ Game.Entity = function(properties){
 	this._z = properties['z'] || 0;
 	this._team = properties['team'] || 'monster';
 	this._map = null;
+	
 	
 };	// Constructor
 

@@ -15,6 +15,16 @@ String.fromCharCode(644) - sword with hilt - ʄ
 
 */
 
+// No plans to use money for anything, but this will serve as a good test for entity drops
+Game.ItemRepository.define('coin', {	
+	name: 'coin',
+	character: String.fromCharCode(186),
+	foreground: 'gold',
+	stackSize: 1000,
+	mixins: [Game.ItemMixins.Stackable]
+});
+
+
 Game.ItemRepository.define('spellbook', {
 	name: 'spellbook',
 	character: ['#'],

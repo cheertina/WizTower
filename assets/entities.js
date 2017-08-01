@@ -101,7 +101,7 @@ Game.EntityRepository.define('kobold', {
     mixins: [Game.EntityMixins.TaskActor, Game.EntityMixins.Sight,
             Game.EntityMixins.Attacker, Game.EntityMixins.Destructible,
             Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer,
-			Game.EntityMixins.CorpseDropper]
+			Game.EntityMixins.CorpseDropper, Game.EntityMixins.LootDropper]
 }, { disableRandomCreation: true });
 
 // Nests

@@ -163,7 +163,7 @@ Game.Screen.playScreen = {
         for (let x = topLeftX; x < topLeftX + screenWidth; x++) {
 			for (let y = topLeftY; y < topLeftY + screenHeight; y++) {
 				// Render all tiles that have ever been seen
-				if(this.DEBUG_PLAY || map.isExplored(x, y, currentDepth)){
+				if(this._DEBUG_PLAY || map.isExplored(x, y, currentDepth)){
 					// Fetch the glyph for the tile 
 					let glyph = this._map.getTile(x, y, currentDepth);
 					let foreground = glyph.getForeground();
@@ -171,7 +171,7 @@ Game.Screen.playScreen = {
 					// If the cell is currently visible, see if there are
 					// items or entities to render instead of the tile glyph
 					
-					if(this.DEBUG_PLAY || visibleCells[x + ',' + y] ){
+					if(this._DEBUG_PLAY || visibleCells[x + ',' + y] ){
 						
 						// Check  for items first, so that entities will render
 						// "on top" of them
@@ -285,6 +285,9 @@ Game.Screen.playScreen = {
 				if (entAt){
 					if(entAt._name !== 'you'){
 						lookText += entAt.describeA(capitalize);
+						lookText += " - " + entAt.getDescription();
+						// DEBUG:
+						// lookText += " - " + JSON.stringify(entAt._stats);
 					} else {
 						lookText += 'You';
 					}
@@ -340,8 +343,11 @@ Game.Screen.playScreen = {
 			}
 			// In look mode
 			if (this._mode == 'look'){
-				if (inputData.keyCode ===ROT.VK_L){ 
+				if (inputData.keyCode === ROT.VK_L ||
+					inputData.keyCode === ROT.VK_RETURN ||
+					inputData.keyCode === ROT.VK_ESCAPE	){ 
 					this._mode = 'play';
+					Game.refresh();
 					return; 
 				}
 			}
@@ -380,7 +386,6 @@ Game.Screen.playScreen = {
 			}
 			// If you're moving a cursor
 			if (this._mode == 'look' || this._mode == 'target' || this._mode == 'spellTarget'){
-				console.log("In look mode, inputData.keyCode: " + inputData.keyCode);
 				switch(inputData.keyCode){
 					case ROT.VK_NUMPAD1: {this.cursorMove(-1,  1); break; }
 					case ROT.VK_NUMPAD2: {this.cursorMove( 0,  1); break; }
@@ -429,7 +434,7 @@ Game.Screen.playScreen = {
 				//---------------------
 				
 				case ROT.VK_N:{ // Let's plow through stuff like walls and enemies
-					if (this.DEBUG_PLAY){
+					if (this._DEBUG_PLAY){
 						if (inputData.shiftKey) { 
 							this._player.removeMixin(Game.EntityMixins.Digger);
 							this._player.removeMixin(Game.EntityMixins.Trample);
@@ -440,6 +445,7 @@ Game.Screen.playScreen = {
 						} 
 						return; 
 					}
+					break;
 				}
 				
 				//---------------------

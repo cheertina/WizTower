@@ -96,11 +96,10 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 		// If hp drops to 0 or less, remove ourselves from the map via Game.Entity.kill()
 		if (this._stats.hp <= 0){
 			Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
-			// DEBUG console.log(attacker.getName() + " kills " + this.getName());
-			// Drop a corpse, if necessary
-			if (this.hasMixin(Game.EntityMixins.CorpseDropper)) {
-				this.tryDropCorpse();
-			}
+			
+			if (this.hasMixin(Game.EntityMixins.LootDropper)) { this.tryDropLoot();	}
+			if (this.hasMixin(Game.EntityMixins.CorpseDropper)) { this.tryDropCorpse();	}
+			
             this.kill();
 			if(attacker.hasMixin('ExperienceGainer')){
 				let exp = this.getMaxHp() + this.getDefenseValue();
@@ -109,7 +108,7 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 				if (exp > 0) { attacker.giveXp(exp); }
 			}
 		}
-	},	// TODO: Move Hp and maxHp into the _stats block?
+	},
 	heal: function(healVal){  // healVal can be negative for non-attack damage (starving, poison, etc.)
 		healVal = healVal || 1;
 		this._stats.hp = Math.min(this._stats.hp + healVal, this._stats.maxHp);
@@ -287,6 +286,26 @@ Game.EntityMixins.CorpseDropper = { // Entity can drop a corpse when killed
 					name: this._name + ' corpse',
 					foreground: this._foreground
 				}));
+		}
+	}
+}
+
+Game.EntityMixins.LootDropper = {
+	name: 'LootDropper',
+	init: function(template) {
+		this._lootTable = template['lootTable'] ||
+			[
+				{item: 'coin', chance: 100},
+				{item: 'coin', chance: 50}
+			];
+	},
+	tryDropLoot: function(){
+		for (let i = 0; i < this._lootTable.length; i++){
+			let entry = this._lootTable[i];
+			if(Math.round(Math.random() * 100) < entry.chance){
+				let key = this.getPos().str;
+				this._map.addItem( key, Game.ItemRepository.create(entry.item) );
+			}
 		}
 	}
 }
@@ -680,9 +699,8 @@ Game.EntityMixins.PlayerActor = {
 		this._acting = true;
 		
 		this.resolveBuffs();
-		if(!this._alive){ return; }	// If killed by an ongoing effect
-		
 		this.addTurnHunger();
+		
 		// Detect if the game is over
         if (!this.isAlive()) {
             Game.Screen.playScreen.setGameEnded(true);
@@ -761,6 +779,12 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 		}
 	},
 	hunt: function(priorities){
+		
+		// TODO: figure out how to actually pass something in here, since right now we call it with
+		// no arguments in the act() function a few lines up from here.
+		// Maybe store it on the creature? Set it in the init function and then it could be part of
+		// the template and added to/changed if necessary (charm, 3rd party, w/e)
+		
 		// Set up defaults, if necessary
 		priorities = priorities || {high: ['player'], low: ['neutral']}
 		
@@ -854,7 +878,7 @@ Game.sendMessage = function(recipient, message, args) { // Send a message to an 
 			message = vsprintf(message, args);
 		}
 		recipient.receiveMessage(message);
-		console.log("To "+ recipient.getName() + ": " + message);
+		// console.log("To "+ recipient.getName() + ": " + message);
 	}
 };	// sendMessage
 

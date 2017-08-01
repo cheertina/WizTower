@@ -40,6 +40,7 @@ Game.Map = function(tiles, player){
 	// Randomly spawn and place enemies and items
 	//this.simplePopulate();
 	this.populate();
+	this.debugPopulate();
 	
 }; // Constructor
 
@@ -98,11 +99,13 @@ Game.Map.prototype.populate = function(){
 			levelRndArr = levelRndArr.randomize();
 		}
 		
-		// Pick 15 monster names at random from our array, and spawn them
-		for (let i = 0; i < 15; i++){
-			let rndNum = Math.floor(Math.random() * levelRndArr.length)
+		// Pick monster names at random from our array, and spawn them
+		// Totally accurate algorithm to scale up the number of enemies from 15 in an 80*24 map
+		// which seemed reasonable during testing.
+		let numberEnemies = Math.floor( (this.getWidth() * this.getHeight())/128 );
+		for (let i = 0; i < numberEnemies; i++){
+			let rndNum = Math.floor(Math.random() * levelRndArr.length);
 			let nameStr = levelRndArr[rndNum];
-			// DEBUG console.log(rndNum, nameStr);
 			this.addEntityAtRandomPosition(Game.EntityRepository.create(nameStr), z);
 		}
 		
@@ -118,6 +121,14 @@ Game.Map.prototype.populate = function(){
 		this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook'), z);
 	}
 	
+}
+
+Game.Map.prototype.debugPopulate = function() {
+	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
 }
 
 Game.Map.prototype.simplePopulate = function() {
@@ -312,13 +323,14 @@ Game.Map.prototype.addEntityAtRandomPosition = function(entity, z){
 
 Game.Map.prototype.removeEntity = function(entity) {
 	// Remove the entity from the map
+	let that = this;
 	let key = entity.getPos().str;
-	if (this._entities[key] == entity) {
-		delete this._entities[key];
+	if (that._entities[key] == entity) {
+		delete that._entities[key];
 	}
 	// If the entity is an actor, remove them from the schedule
 	if (entity.hasMixin('Actor')) {
-		this._scheduler.remove(entity);
+		that._scheduler.remove(entity);
 	}
 	
 }; // removeEntity

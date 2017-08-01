@@ -11,6 +11,7 @@ Game.DynamicGlyph = function(properties){
 	
 	// Instantiate properties from the passed object
 	this._name = properties['name'] || '';
+	this._description = properties['description'] || 'nondescript';
 	
 	// Create an object which will keep track of the mixins
 	// that are attached to this entity based on the name (of the mixin)
@@ -106,17 +107,15 @@ Game.DynamicGlyph.prototype.hasMixin = function(mix){
 
 Game.DynamicGlyph.prototype.getName = function(){ return this._name; }
 Game.DynamicGlyph.prototype.setName = function(name){ this._name = name; }
+Game.DynamicGlyph.prototype.getDescription = function() { return this._description; }
 
-// Description variants
-
+// Description variants - these are probably poorly named,
+// but the tutorial I started with didn't have an actual description string
 Game.DynamicGlyph.prototype.describe = function() {
-	// DEBUG console.log('dynamicGlyph:108');
-	// DEBUG console.log(vsprintf("%s.hasMixin('Stackable')", "%s._stackCount", [this.getName(), this.getName()]));
-	// DEBUG console.log(this.hasMixin('Stackable'), (this._stackCount || "non-stack"));
 	if (this.hasMixin('Stackable') && this._stackCount > 1){
 		return vsprintf("pile of %d %ss", [this._stackCount, this._name]);
 	}
-		return this._name;
+	return this._name;
 };
 
 Game.DynamicGlyph.prototype.describeA = function(capital = false) {

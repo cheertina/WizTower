@@ -8,7 +8,7 @@ Game.Magic = function(){
 	this.activeSpells = [];
 };
 
-Game.Magic.prototype.increaseMaxMana = function(color, delta = 10){
+Game.Magic.prototype.increaseMaxMana = function(color, delta = 5){
 	if( color == 'black' ||
 	color == 'white' ||
 	color == 'green' ||
