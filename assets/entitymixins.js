@@ -544,6 +544,8 @@ Game.EntityMixins.InventoryHolder = { // Entity can pickup/drop/carry items
 			// See if there's a stack to add it to
 			for(let slot = 0; slot < this._items.length; slot++) {
 				
+				
+				
 				/*\
 				|*|  console.log("this._items["+slot+"] = " + JSON.stringify(this._items[slot]));
 				|*|  console.log(this._items[slot]);
@@ -551,8 +553,6 @@ Game.EntityMixins.InventoryHolder = { // Entity can pickup/drop/carry items
 				|*|  	console.log(this._items[slot]._name + ' == ' + item._name+': '+ (this._items[slot]._name == item._name));
 				|*|  }
 				\*/
-				
-				
 				
 				
 				
@@ -633,8 +633,8 @@ Game.EntityMixins.InventoryHolder = { // Entity can pickup/drop/carry items
 	},
 	dropItem: function(slot){
 		if(this._items[slot]) {
-			this._map.addItem(this.getPos().str, this._items[slot]);
-			this.removeItem(slot);
+			let removedItem = this.removeItem(slot);
+			this._map.addItem(this.getPos().str, removedItem);
 		}
 	}
 };

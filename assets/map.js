@@ -129,6 +129,17 @@ Game.Map.prototype.debugPopulate = function() {
 	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
 	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
 	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
 }
 
 Game.Map.prototype.simplePopulate = function() {
@@ -228,14 +239,17 @@ Game.Map.prototype.addItem = function(key, item){
 		
 	// key = x + ',' + y + ',' + z - use getPos().str
 	if (this._items[key]){
+		let added = false;
 		if(item.hasMixin('Stackable')){
 			for(let slot = 0; slot < this._items[key].length; slot++) {
 				if (this._items[key][slot] && (this._items[key][slot]._name == item._name)){
 					this._items[key][slot].incCount();
+					added = true;
 				}
 			}
 		}
-		else {
+		
+		if(!added) {
 			this._items[key].push(item);
 		}
 	}else this._items[key] = [item];
