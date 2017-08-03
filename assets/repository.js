@@ -19,7 +19,7 @@ Game.Repository.prototype.define = function(name, template, options){
 Game.Repository.prototype.create = function(name, extraProperties){
 	// Make sure there's a template
 	if (!this._templates[name]) {
-		throw new Error("No template named '" + name +"' in repository'" + this._name + "'");
+		throw new Error("No template named '" + name +"' in repository '" + this._name + "'");
 	}
 	
 	// Copy the template and then apply any extra properties

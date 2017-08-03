@@ -112,7 +112,8 @@ Game.Map.prototype.populate = function(){
 		
 		// some items from the list of possible random items
 		for (let i = 0; i < 10; i++){
-			let newItem = Game.ItemRepository.createRandom();
+			let newItem = Game.ItemRepository.createRandomByGroup('junk');
+			if (newItem == undefined){ throw "newItem is undefined"; }
 			this.addItemAtRandomPosition(newItem,z);
 		}
 		

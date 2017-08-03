@@ -272,6 +272,7 @@ Game.EntityMixins.FoodConsumer = { // Entity can/must eat
 	}
 };
 
+/*  DEPRECATED - put corpses in the loot table
 Game.EntityMixins.CorpseDropper = { // Entity can drop a corpse when killed
 	name: 'CorpseDropper',
 	init: function(template) {
@@ -289,6 +290,7 @@ Game.EntityMixins.CorpseDropper = { // Entity can drop a corpse when killed
 		}
 	}
 }
+*/
 
 Game.EntityMixins.LootDropper = {
 	name: 'LootDropper',
@@ -296,15 +298,25 @@ Game.EntityMixins.LootDropper = {
 		this._lootTable = template['lootTable'] ||
 			[
 				{item: 'coin', chance: 100},
-				{item: 'coin', chance: 50}
+				{item: 'corpse', chance: 5},
 			];
 	},
 	tryDropLoot: function(){
 		for (let i = 0; i < this._lootTable.length; i++){
 			let entry = this._lootTable[i];
+			
+			if (entry.item == 'corpse') {
+				entry.extras = { name: this._name + ' corpse', foreground: this._foreground	};
+			}
+			if(!entry.chance) { entry.chance = 100; }
+			
 			if(Math.round(Math.random() * 100) < entry.chance){
 				let key = this.getPos().str;
-				this._map.addItem( key, Game.ItemRepository.create(entry.item) );
+				if (entry.item == 'random') { 
+					if (entry.itemGroup) { this._map.addItem( key, Game.ItemRepository.createRandomByGroup(entry.itemGroup) ); }
+					else this._map.addItem( key, Game.ItemRepository.createRandom() );
+				}
+				else { this._map.addItem( key, Game.ItemRepository.create(entry.item, entry.extras) ); }
 			}
 		}
 	}

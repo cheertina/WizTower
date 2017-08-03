@@ -89,6 +89,7 @@ Game.Entity.prototype.tryMove = function(x, y, z) {
 		// Update the entity's position
 		this.setPosition(x, y, z);
 		let items = this.getMap().getItemsAt(x, y, z);
+		//console.log(x,y,z,items);
 		if (items){
 			if (items.length === 1){
 				Game.sendMessage(this, "You see %s.", [items[0].describeA()]);
