@@ -77,7 +77,7 @@ Game.Screen.playScreen = {
     _player: null,
 	_gameEnded: false,
 	_subScreen: null,
-	_DEBUG_PLAY: false,
+	_DEBUG_PLAY: true,
 	
 	// For looking around, mode='look'
 	_cursor: {},

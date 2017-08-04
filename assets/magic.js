@@ -272,3 +272,28 @@ Game.SpellBook.define('rancor', {
 	}
 });
 
+Game.SpellBook.define('unholy strength', {
+	name: 'Unholy Strength',
+	description: "Increases attack and defense",
+	targets: 'self',
+	manaCost: { black: 1 },
+	manaUsed: { black: 1 },
+	activeName: 'unholy strength',
+	bonus: {
+		mixins: [],
+		stats: { attack: 2, defense: 1 }
+	}
+});
+
+Game.SpellBook.define('holy strength', {
+	name: 'Holy Strength',
+	description: "Increases attack and defense",
+	targets: 'self',
+	manaCost: { black: 1 },
+	manaUsed: { black: 1 },
+	activeName: 'holy strength',
+	bonus: {
+		mixins: [],
+		stats: { attack: 1, defense: 2 }
+	}
+});

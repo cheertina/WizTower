@@ -681,7 +681,7 @@ Game.EntityMixins.Equipper = {
 		// of the first stack in the inventory array that holds this type
 		if(ammoType && this.hasMixin('InventoryHolder')) { 
 			for (let i = 0; i < this._items.length; i++){
-				if (this._items[i].getName() == ammoType){
+				if (this._items[i] && this._items[i].getName() == ammoType){
 					return i;
 				}
 			}
@@ -776,6 +776,17 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 	init: function(template){
 		// Load tasks
 		this._tasks = template['tasks'] || ['wander'];
+		if(this._tasks.indexOf('hunt') !== -1)
+		{
+			this._priorities = {};
+			if(template['priorities']){
+				this._priorities.high = template['priorities'].high || [];
+				this._priorities.low = template['priorities'].low || [];
+			}
+			else {
+				this._priorities = {high:['player'], low: []};
+			}
+		}
 	},
 	act: function(){
 		this.resolveBuffs();
@@ -783,7 +794,8 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 		
 		// Prioritize tasks until one can be acted on
 		// We factored out the pre-test.  Now we attempt the action and return false
-		// if it is impossible - no targets in range, whatever.  Keep trying in order until something succeeds
+		// if it is impossible - no targets in range, whatever - keep trying in order
+		// until something succeeds
 		// Wander will always return true;
 		for (let i = 0; i < this._tasks.length; i++){
 			let success = this[this._tasks[i]]();
@@ -798,7 +810,7 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 		// the template and added to/changed if necessary (charm, 3rd party, w/e)
 		
 		// Set up defaults, if necessary
-		priorities = priorities || {high: ['player'], low: ['neutral']}
+		priorities = this._priorities;
 		
 		// Prepare empty lists to fill with targets
 		let targets = [];
@@ -813,7 +825,7 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 			function(x, y, radius, visibility) { // Callback function, called on each visible (x,y) pair in radius
 				let chk = map.getEntityAt(x, y, myLoc.z)
 				if(chk && (x !== myLoc.x || y !== myLoc.y)){ // if there's a creature and it's not the one searching
-					// See if this entities team is on the high priority list
+					// See if this entity's team is on the high priority list
 					for (var prioIndex = 0; prioIndex < priorities.high.length; prioIndex++){
 						if(chk.getTeam() == priorities.high[prioIndex]) { 
 							targets.push(chk.getPos());

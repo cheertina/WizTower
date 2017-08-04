@@ -69,12 +69,44 @@ Game.Map.prototype.placeAltarAt = function(x, y, z){
 // This object defines the relative chances of each monster type to be spawned on a given level
 
 Game.Map.enemyAssign = {
-	level0: [{name: 'bat', chance: 2}, {name: 'newt', chance: 2}, {name: 'kobold', chance: 1}, {name: 'fungus', chance: 5}],
-	level1: [{name: 'bat', chance: 4}, {name: 'newt', chance: 4}, {name: 'kobold', chance: 2}, {name: 'fungus', chance: 2}],
-	level2: [{name: 'bat', chance: 3}, {name: 'newt', chance: 3}, {name: 'kobold', chance: 3}, {name: 'fungus', chance: 1}],
-	level3: [{name: 'bat', chance: 3}, {name: 'newt', chance: 3}, {name: 'kobold', chance: 4}, {name: 'fungus', chance: 1}],
-	level4: [{name: 'bat', chance: 3}, {name: 'newt', chance: 3}, {name: 'kobold', chance: 5}, {name: 'fungus', chance: 1}],
-	other: [{name: 'kobold', chance: 1}]
+	level0: [
+		{name: 'bat',	chance: 2},
+		{name: 'newt',	chance: 2},
+		{name: 'kobold',chance: 1},
+		{name: 'fungus',chance: 5},
+		{name: 'rat',	chance: 2},
+	],
+	level1: [
+		{name: 'bat',	chance: 4},
+		{name: 'newt',	chance: 4},
+		{name: 'kobold',chance: 2},
+		{name: 'fungus',chance: 2},
+		{name: 'rat',	chance: 2},
+	],
+	level2: [
+		{name: 'bat',	chance: 3},
+		{name: 'newt',	chance: 3},
+		{name: 'kobold',chance: 3},
+		{name: 'fungus',chance: 1},
+		{name: 'rat',	chance: 2},
+	],
+	level3: [
+		{name: 'bat',	chance: 3},
+		{name: 'newt',	chance: 3},
+		{name: 'kobold',chance: 4},
+		{name: 'fungus',chance: 1},
+		{name: 'rat',	chance: 2},
+	],
+	level4: [
+		{name: 'bat',	chance: 3},
+		{name: 'rat',	chance: 3}, 
+		{name: 'newt',	chance: 1},
+		{name: 'kobold',chance: 5},
+		{name: 'fungus',chance: 1},
+	],
+	other: [
+		{name: 'kobold', chance: 1}
+	]
 	
 };
 
@@ -125,6 +157,10 @@ Game.Map.prototype.populate = function(){
 }
 
 Game.Map.prototype.debugPopulate = function() {
+	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook2'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook2'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook2'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook2'), 0);
 	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
 	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
 	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);

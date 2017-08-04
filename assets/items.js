@@ -48,10 +48,19 @@ Game.ItemRepository.define('coin', {
 Game.ItemRepository.define('spellbook', {
 	name: 'spellbook',
 	character: ['#'],
-	foreground: 'cyan',
+	foreground: 'peru',
 	//spells: ['heal', 'fireball'],
 	mixins: [Game.ItemMixins.Spellbook]
 }, {disableRandomCreation: true});
+ 
+Game.ItemRepository.define('spellbook2', {
+	name: 'universal spellbook',
+	character: [String.fromCharCode(930), String.fromCharCode(931)],
+	foreground: 'gold',
+	spells: ['regen', 'heal', 'fireball', 'drain life', 'blink', 'tunneling', 'rancor', 'unholy strength'],
+	mixins: [Game.ItemMixins.Spellbook]
+}, {disableRandomCreation: true});
+ 
 
 Game.ItemRepository.define('apple', {
 	name: 'apple',

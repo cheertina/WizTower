@@ -39,7 +39,7 @@ the 'stats' entry should contain any of the following things, if they exist for 
 Game.EntityRepository.define('fungus', {
 	name: 'fungus',
 	team: 'neutral',
-	character: 'F',
+	character: String.fromCharCode(1064), // 'F',
 	foreground: 'lime',
 	spawns: ['fungus'],
 	spawnChance: .02,
@@ -48,7 +48,11 @@ Game.EntityRepository.define('fungus', {
 	stats: {
 		maxHp: 10,
 	},
-	mixins: [Game.EntityMixins.Spawner, Game.EntityMixins.RngSpawnActor, Game.EntityMixins.Destructible]
+	mixins: [
+		Game.EntityMixins.Spawner,
+		Game.EntityMixins.RngSpawnActor,
+		Game.EntityMixins.Destructible
+	]
 }); // Fungus Template
 
 Game.EntityRepository.define('bat', {
@@ -64,9 +68,8 @@ Game.EntityRepository.define('bat', {
 	lootTable: [ {item: 'corpse', chance: 100} ],
 	mixins: [
 		Game.EntityMixins.TaskActor,	// No tasks, so just wander
-		Game.EntityMixins.Attacker,
-		Game.EntityMixins.Destructible,
 		Game.EntityMixins.LootDropper,
+		Game.EntityMixins.Attacker,	Game.EntityMixins.Destructible,
 		Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer
 		]
 }); // Bat Template
@@ -74,7 +77,7 @@ Game.EntityRepository.define('bat', {
 Game.EntityRepository.define('newt', {
     name: 'newt',
     character: ':',
-	team: 'neutral',
+	team: 'monster',
     foreground: 'yellow',
     speed: 1000,
 	stats: {
@@ -84,11 +87,32 @@ Game.EntityRepository.define('newt', {
 	lootTable: [ {item: 'corpse', chance: 100} ],
 	mixins: [
 		Game.EntityMixins.TaskActor, 	// No tasks, so just wander
-		Game.EntityMixins.Attacker,
-		Game.EntityMixins.Destructible,
 		Game.EntityMixins.LootDropper,
+		Game.EntityMixins.Attacker,	Game.EntityMixins.Destructible,
+		Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer
+	]
+});
+
+Game.EntityRepository.define('rat',{
+	name: 'rat',
+	character: String.fromCharCode(442),
+	team: 'monster',
+	foreground: 'brown',
+	speed: 1000,
+	stats: {
+		maxHp: 4,
+		attack: 2,
+	},
+	lootTable: [{item: 'corpse', chance: 100}],
+	tasks: ['hunt', 'wander'],
+	mixins: [
+		Game.EntityMixins.Sight,
+		Game.EntityMixins.TaskActor,
+		Game.EntityMixins.LootDropper,
+		Game.EntityMixins.Attacker,	Game.EntityMixins.Destructible,
 		Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer
 		]
+	
 });
 
 Game.EntityRepository.define('kobold', {
@@ -107,10 +131,13 @@ Game.EntityRepository.define('kobold', {
 		{ item: 'corpse', chance: 100}
 	],
     tasks: ['hunt', 'wander'],
-    mixins: [Game.EntityMixins.TaskActor, Game.EntityMixins.Sight,
-            Game.EntityMixins.Attacker, Game.EntityMixins.Destructible,
-            Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer,
-			Game.EntityMixins.LootDropper]
+	priorities: {high: ['player'], low: ['neutral']},
+    mixins: [
+		Game.EntityMixins.TaskActor,
+		Game.EntityMixins.Sight,
+        Game.EntityMixins.Attacker, Game.EntityMixins.Destructible,
+        Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer,
+		Game.EntityMixins.LootDropper]
 }, { disableRandomCreation: true });
 
 // Nests
