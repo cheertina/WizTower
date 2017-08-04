@@ -47,7 +47,7 @@ Game.ItemRepository.define('coin', {
 
 Game.ItemRepository.define('spellbook', {
 	name: 'spellbook',
-	character: ['#'],
+	character: [String.fromCharCode(930), String.fromCharCode(931)],
 	foreground: 'peru',
 	//spells: ['heal', 'fireball'],
 	mixins: [Game.ItemMixins.Spellbook]
