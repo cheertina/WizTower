@@ -162,23 +162,18 @@ Game.SpellBook.getSpellList = function(){
 |*| 
 \*/
 
-Game.SpellBook.define('regen', {
-	name: 'Regeneration',
-	description: "Heals 1 hp every 5 turns for 20 turns",
+
+// White
+Game.SpellBook.define('holy strength', {
+	name: 'Holy Strength',
+	description: "Increases attack and defense",
 	targets: 'self',
-	manaCost: { green: 2 },
-	onCast: function(target, caster){ return; },
-	buff: function(target){
-		this.name = 'Regeneration';
-		this.duration = 20;
-		this.target = target;
-		this.onExpire= function(){
-			Game.sendMessage(this.target, "The effects of your regen spell fade.");
-		};
-		
-		this.perTurn = function(){	// 'this.target' refers to the target that is part of the 'buff' object
-			if (this.duration % 5 == 0){ this.target.heal(1); }
-		}
+	manaCost: { black: 1 },
+	manaUsed: { black: 1 },
+	activeName: 'holy strength',
+	bonus: {
+		mixins: [],
+		stats: { attack: 1, defense: 2 }
 	}
 });
 
@@ -190,6 +185,17 @@ Game.SpellBook.define('heal', {
 	onCast: function(target, caster){
 		target.heal(5);
 	}
+});
+
+// Red
+Game.SpellBook.define('tunneling', {
+	name: 'Tunneling',
+	description: "Allows the caster to dig through walls",
+	targets: 'self',
+	manaCost: { red: 1 },
+	manaUsed: { red: 1 },
+	activeName: 'tunneling',
+	bonus: { mixins: [Game.EntityMixins.Digger] }
 });
 
 Game.SpellBook.define('fireball',{
@@ -211,17 +217,7 @@ Game.SpellBook.define('fireball',{
 	}
 });
 
-Game.SpellBook.define('drain life', {
-	name: 'Drain Life',
-	description: "Deals 2 damage and heals the caster for an equal amount",
-	targets: 'ranged',
-	manaCost: { black: 2 },
-	onCast: function(target, caster){
-		target.heal(-2);
-		caster.heal(2);
-	}
-});
-
+// Blue
 Game.SpellBook.define('blink', {
 	name: 'Blink',
 	description: "Teleports the caster to a random nearby location",
@@ -249,14 +245,25 @@ Game.SpellBook.define('blink', {
 	}
 });
 
-Game.SpellBook.define('tunneling', {
-	name: 'Tunneling',
-	description: "Allows the caster to dig through walls",
+// Green
+Game.SpellBook.define('regen', {
+	name: 'Regeneration',
+	description: "Heals 1 hp every 5 turns for 20 turns",
 	targets: 'self',
-	manaCost: { red: 1 },
-	manaUsed: { red: 1 },
-	activeName: 'tunneling',
-	bonus: { mixins: [Game.EntityMixins.Digger] }
+	manaCost: { green: 2 },
+	onCast: function(target, caster){ return; },
+	buff: function(target){
+		this.name = 'Regeneration';
+		this.duration = 20;
+		this.target = target;
+		this.onExpire= function(){
+			Game.sendMessage(this.target, "The effects of your regen spell fade.");
+		};
+		
+		this.perTurn = function(){	// 'this.target' refers to the target that is part of the 'buff' object
+			if (this.duration % 5 == 0){ this.target.heal(1); }
+		}
+	}
 });
 
 Game.SpellBook.define('rancor', {
@@ -269,6 +276,18 @@ Game.SpellBook.define('rancor', {
 	bonus: { 
 		mixins: [Game.EntityMixins.Trample],
 		stats: {attack: 2}
+	}
+});
+
+// Black
+Game.SpellBook.define('drain life', {
+	name: 'Drain Life',
+	description: "Deals 2 damage and heals the caster for an equal amount",
+	targets: 'ranged',
+	manaCost: { black: 2 },
+	onCast: function(target, caster){
+		target.heal(-2);
+		caster.heal(2);
 	}
 });
 
@@ -285,15 +304,21 @@ Game.SpellBook.define('unholy strength', {
 	}
 });
 
-Game.SpellBook.define('holy strength', {
-	name: 'Holy Strength',
-	description: "Increases attack and defense",
-	targets: 'self',
-	manaCost: { black: 1 },
-	manaUsed: { black: 1 },
-	activeName: 'holy strength',
-	bonus: {
-		mixins: [],
-		stats: { attack: 1, defense: 2 }
+Game.SpellBook.define('summon rat', {
+	name: 'Summon Rat',
+	description: "Summons a small rat to fight for you",
+	targets: 'summon',
+	manaCost: { black: 3 },
+	onCast: function(targetLoc, caster){
+		let newRat = Game.EntityRepository.create('rat', {
+			foreground: 'dimgray',
+			team: 'player',
+			priorities: {high: ['monster'], low:['neutral']},
+			lootTable: {}
+		});
+		newRat.setX(targetLoc.x);
+		newRat.setY(targetLoc.y);
+		newRat.setZ(targetLoc.z);
+		caster._map.addEntity(newRat);
 	}
 });

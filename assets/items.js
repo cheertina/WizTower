@@ -47,7 +47,7 @@ Game.ItemRepository.define('coin', {
 
 Game.ItemRepository.define('spellbook', {
 	name: 'spellbook',
-	character: [String.fromCharCode(930), String.fromCharCode(931)],
+	character: [String.fromCharCode(9647), String.fromCharCode(991)],
 	foreground: 'peru',
 	//spells: ['heal', 'fireball'],
 	mixins: [Game.ItemMixins.Spellbook]
@@ -55,9 +55,10 @@ Game.ItemRepository.define('spellbook', {
  
 Game.ItemRepository.define('spellbook2', {
 	name: 'universal spellbook',
-	character: [String.fromCharCode(930), String.fromCharCode(931)],
+	character: [String.fromCharCode(9647), String.fromCharCode(991)],
 	foreground: 'gold',
-	spells: ['regen', 'heal', 'fireball', 'drain life', 'blink', 'tunneling', 'rancor', 'unholy strength'],
+	//spells: ['regen', 'heal', 'fireball', 'drain life', 'blink', 'tunneling', 'rancor', 'unholy strength'],
+	spells: Game.SpellBook.getSpellList().slice(),	// slice() keeps this from being a reference to the same array
 	mixins: [Game.ItemMixins.Spellbook]
 }, {disableRandomCreation: true});
  

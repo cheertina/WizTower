@@ -2,7 +2,7 @@ var Game =  {
 	_display: null,
     _currentScreen: null,
     _screenWidth: 80,
-    _screenHeight: 48,
+    _screenHeight: 360,
 	
 	init: function() {
         // Any necessary initialization will go here.
@@ -48,7 +48,7 @@ Game.drawStuff = function(){
 };
 
 Game.drawStuff2 = function(){
-	let x = 24;
+	let x = this._screenHeight-4;
 	for (let i = 0; i < x; i++){
 		for (let j = 0; j < 64; j++){
 			this._display.draw(j,i, String.fromCharCode(64*i + j), 'white');
@@ -77,6 +77,5 @@ window.onload = function() {
     }
 
 	Game.drawStuff2();
-	Game.drawStuff();
 };
 

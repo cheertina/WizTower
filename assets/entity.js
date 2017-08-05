@@ -80,6 +80,7 @@ Game.Entity.prototype.tryMove = function(x, y, z) {
 		} else {
 			// If not, nothing we can do, and we can't move
 			// onto the tile
+			Game.sendMessage(this, vsprintf("You can't move there, %s is in the way", [target.getName()]));
 			return false;
 		}
 	}

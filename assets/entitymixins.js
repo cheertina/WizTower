@@ -464,8 +464,9 @@ Game.EntityMixins.MagicUser = {
 		}
 		return true;
 	},
-	castSpell: function(spellName, target, caster){
+	castSpell: function(spellName, target){
 		let spell = Game.SpellBook.create(spellName);
+		
 		
 		// See if this is a spell that we have cast on ourself that we can cancel
 		if (spell.hasActive()){	
@@ -509,6 +510,10 @@ Game.EntityMixins.MagicUser = {
 		
 		// If a spell has no onCast effect specified this will be a function that just returns
 		// so it's safe to call it like this.
+		// 'target' in this call may also refer to a location, for summon spells.  We're just passing
+		// along the same thing that was passed _in_ to this function, and the spell-specific code
+		// will handle the details of what to do with it
+		
 		spell._onCast(target, this);	// 'this' is the caster
 		
 		// A buff is a turn-based effect - either a per-turn, or a one-shot on a timer
@@ -517,9 +522,13 @@ Game.EntityMixins.MagicUser = {
 			target._buffs[newBuff.name] = newBuff;
 		}
 		
-		castMsg = vsprintf("You cast %s on %s", 
-			[spellName, (target.getName() == 'you' ? 'yourself' : target.getName())]);
-		Game.sendMessage(this, castMsg);
+		if(spell._targets == 'summon'){
+			castMsg = ("You cast " + spellName);
+		} else {
+			castMsg = vsprintf("You cast %s on %s", 
+				[spellName, (target.getName() == 'you' ? 'yourself' : target.getName())]);
+		}
+			Game.sendMessage(this, castMsg);
 		//Game.refresh();
 		
 	},
@@ -802,12 +811,10 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 			if (success) { return; }
 		}
 	},
-	hunt: function(priorities){
-		
-		// TODO: figure out how to actually pass something in here, since right now we call it with
-		// no arguments in the act() function a few lines up from here.
-		// Maybe store it on the creature? Set it in the init function and then it could be part of
+	hunt: function(){
+		// store it on the creature? Set it in the init function and then it could be part of
 		// the template and added to/changed if necessary (charm, 3rd party, w/e)
+		
 		
 		// Set up defaults, if necessary
 		priorities = this._priorities;
@@ -836,7 +843,7 @@ Game.EntityMixins.TaskActor = {		// Perform task, or wander
 						if(chk.getTeam() == priorities.low[prioIndex]) { 
 							subTargets.push(chk.getPos());
 						}
-					}					
+					}
 				}
 		});
 		// So now we should have 2 lists of positions in visual radius with targets

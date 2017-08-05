@@ -317,9 +317,10 @@ Game.Screen.playScreen = {
 		// If there's a subscreen, use that handler instead
 		if(this._subScreen){
 			let subScreenReturn = this._subScreen.handleInput(inputType, inputData) || {};
-			if (subScreenReturn.spellcast && subScreenReturn.spellcast){
+			if (subScreenReturn && subScreenReturn.spellcast){ 
 				this._mode = 'spellTarget';
 				this._spellToCast = subScreenReturn.spellName || null;
+				this._spellTarget = subScreenReturn.target; 	// 'ranged' or 'summon'
 			} else {
 				// Return values from other (future) subScreens get checked here
 			}
@@ -357,6 +358,7 @@ Game.Screen.playScreen = {
 				if (inputData.keyCode === ROT.VK_RETURN) {
 					console.log('Some kind of targeted effect');
 					var target = this._map.getEntityAt(this._cursor.x, this._cursor.y, this._player.getZ());
+					var targetLoc = { x: this._cursor.x, y: this._cursor.y, z: this._player.getZ() };
 					if (this._mode == 'target'){
 						if(target){
 							this._player.rangedAttack(target, this._player.getAmmoSlot());
@@ -372,7 +374,13 @@ Game.Screen.playScreen = {
 					if (this._mode == 'spellTarget' && this._spellToCast !== null){
 						this._mode = 'play'
 						Game.refresh();
-						this._player.castSpell(this._spellToCast, target);
+						
+						if (this._spellTarget == 'ranged') { 
+							this._player.castSpell(this._spellToCast, target);
+						}
+						if (this._spellTarget == 'summon') { 
+							this._player.castSpell(this._spellToCast, targetLoc);
+						}
 						this._map.getEngine().unlock();
 					}
 					
@@ -479,9 +487,6 @@ Game.Screen.playScreen = {
 				// CAST a spell
 				case ROT.VK_C:{
 					if (inputData.shiftKey) { 
-						// shift+c to test regen spell
-						this._player.castSpell('regen', this._player);
-						break;
 					}
 					else{
 						Game.Screen.spellSelectionScreen.setup(this._player);
@@ -847,7 +852,10 @@ Game.Screen.spellSelectionScreen = {
 			
 			
 			Game.Screen.playScreen.setSubScreen(null);
-			return { spellcast: true, spellName: spell };
+			return {
+				spellcast: true, spellName: spell,
+				target: Game.SpellBook._templates[spell].targets
+			};
 		}
 	}
 };
