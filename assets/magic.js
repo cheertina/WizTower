@@ -245,6 +245,33 @@ Game.SpellBook.define('blink', {
 	}
 });
 
+Game.SpellBook.define('flying', {
+	name: 'flying',
+	decription: "Allows the caster to fly over obstacles",
+	targets: 'self',
+	manaCost: { blue: 1 },
+	onCast: function(target, caster){
+		target.addMixin(Game.EntityMixins.Flying);
+		return;
+	},
+	buff: function(target){
+		this.name = 'Flying';
+		this.duration = 10;
+		this.target = target;
+		this.onExpire = function(){
+			this.target.removeMixin(Game.EntityMixins.Flying);
+			Game.sendMessage(this.target, "Your flying spell fades and you float back to the ground.");
+			if (!this.target._map.getTile(this.target.getX(), this.target.getY(), this.target.getZ()).isWalkable()){
+				this.target.kill();
+			}
+			return;
+		}
+		this.perTurn = function(){
+			console.log("Flying: " + this.duration + " turns left.")
+		}
+	}
+})
+
 // Green
 Game.SpellBook.define('regen', {
 	name: 'Regeneration',

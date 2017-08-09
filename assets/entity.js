@@ -86,7 +86,7 @@ Game.Entity.prototype.tryMove = function(x, y, z) {
 	}
 	// Check if we can walk on the tile
 	// and do so, if possible
-	if (tile.isWalkable()){
+	if (tile.isWalkable() || (tile.isFlyable() && this.hasMixin('Flying'))){
 		// Update the entity's position
 		this.setPosition(x, y, z);
 		let items = this.getMap().getItemsAt(x, y, z);

@@ -332,7 +332,9 @@ Game.EntityMixins.Trample = {	// This entity can move into an occupied space if 
 	name: 'Trample'
 };
 
-
+Game.EntityMixins.Flying = {
+	name: 'Flying'
+}
 // XP, Levels, and Stats
 Game.EntityMixins.ExperienceGainer = {
 	name: 'ExperienceGainer',

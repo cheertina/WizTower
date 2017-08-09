@@ -8,6 +8,7 @@ Game.Tile = function(properties){
 	this._name = properties['name'] || '';
 	this._walkable = properties['walkable'] || false;
 	this._diggable = properties['diggable'] || false;
+	this._flyable = properties['flyable'] || this._walkable;
 	this._blocksLight = properties['blocksLight'] !== undefined ? properties['blocksLight'] : true;
 	
 	// We're ok with this being undefined instead of having a default value
@@ -19,6 +20,7 @@ Game.Tile.extend(Game.Glyph);
 
 Game.Tile.prototype.getName = function(){ return this._name; }
 Game.Tile.prototype.isWalkable = function(){ return this._walkable; }
+Game.Tile.prototype.isFlyable = function(){ return this._flyable; }
 Game.Tile.prototype.isDiggable = function(){ return this._diggable; }
 Game.Tile.prototype.isBlockingLight = function(){ return this._blocksLight; }
 Game.Tile.prototype.isActive = function(){ return this._active; }
@@ -74,6 +76,14 @@ Game.Tile.stairsDownTile = new Game.Tile({
 	blocksLight: false
 });
 
+Game.Tile.lavaTile = new Game.Tile({
+	name: 'lava',
+	character: String.fromCharCode(6278),
+	foreground: 'orangered',
+	walkable: false,
+	flyable: true,
+	blocksLight: false
+})
 
 Game.Tile.altarTile = function(){
 	Game.Tile.call(this, {
