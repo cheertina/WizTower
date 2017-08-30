@@ -44,25 +44,69 @@ Game.ItemRepository.define('coin', {
 	mixins: [Game.ItemMixins.Stackable]
 });
 
-
-Game.ItemRepository.define('spellbook', {
+// Spellbooks
+Game.ItemRepository.define('spellbook', {	// Contains a few random spells
 	name: 'spellbook',
 	character: [String.fromCharCode(9647), String.fromCharCode(991)],
 	foreground: 'peru',
-	//spells: ['heal', 'fireball'],
 	mixins: [Game.ItemMixins.Spellbook]
-}, {disableRandomCreation: true});
- 
-Game.ItemRepository.define('spellbook2', {
+});
+
+Game.ItemRepository.define('spellbookRed', {
+	name: 'red spellbook',
+	itemGroup: 'book',
+	character: [String.fromCharCode(9647), String.fromCharCode(991)],
+	foreground: 'red',
+	spells: ['tunneling', 'fireball'],
+	mixins: [Game.ItemMixins.Spellbook]
+});
+
+Game.ItemRepository.define('spellbookBlue', {
+	name: 'blue spellbook',
+	itemGroup: 'book',
+	character: [String.fromCharCode(9647), String.fromCharCode(991)],
+	foreground: 'cyan',
+	spells: ['blink', 'flying'],
+	mixins: [Game.ItemMixins.Spellbook]
+});
+
+Game.ItemRepository.define('spellbookGreen', {
+	name: 'green spellbook',
+	itemGroup: 'book',
+	character: [String.fromCharCode(9647), String.fromCharCode(991)],
+	foreground: 'lime',
+	spells: ['rancor','regen','biostasis'],
+	mixins: [Game.ItemMixins.Spellbook]
+});
+
+Game.ItemRepository.define('spellbookBlack', {
+	name: 'black spellbook',
+	itemGroup: 'book',
+	character: [String.fromCharCode(9647), String.fromCharCode(991)],
+	foreground: 'black',
+	background: 'grey',
+	spells: ['drain life', 'unholy strength', 'summont rat'],
+	mixins: [Game.ItemMixins.Spellbook]
+});
+
+Game.ItemRepository.define('spellbookWhite', {
+	name: 'white spellbook',
+	itemGroup: 'book',
+	character: [String.fromCharCode(9647), String.fromCharCode(991)],
+	foreground: 'white',
+	spells: ['heal','holy strength'],
+	mixins: [Game.ItemMixins.Spellbook]
+});
+
+Game.ItemRepository.define('spellbook2', {	// Contains all spells
 	name: 'universal spellbook',
 	character: [String.fromCharCode(9647), String.fromCharCode(991)],
 	foreground: 'gold',
-	//spells: ['regen', 'heal', 'fireball', 'drain life', 'blink', 'tunneling', 'rancor', 'unholy strength'],
 	spells: Game.SpellBook.getSpellList().slice(),	// slice() keeps this from being a reference to the same array
 	mixins: [Game.ItemMixins.Spellbook]
 }, {disableRandomCreation: true});
  
-
+// Food
 Game.ItemRepository.define('apple', {
 	name: 'apple',
 	itemGroup: 'food',
@@ -82,6 +126,7 @@ Game.ItemRepository.define('melon', {
 	mixins: [Game.ItemMixins.Edible]
 });
 
+// Ammo
 Game.ItemRepository.define('rock', {
 	name: 'rock',
 	character: '*',
@@ -90,6 +135,16 @@ Game.ItemRepository.define('rock', {
 	mixins: [Game.ItemMixins.Stackable]
 });
 
+Game.ItemRepository.define('arrow', {
+	name: 'arrow',
+	character: ['^','|'],
+	foreground: 'white',
+	stackSize: 10,
+	mixins: [Game.ItemMixins.Stackable]
+});
+
+
+// Misc
 Game.ItemRepository.define('corpse', {
 	name: 'corpse',
 	character: '%',
@@ -113,8 +168,20 @@ Game.ItemRepository.define('sling', {
 	mixins: [Game.ItemMixins.Equippable]
 });
 
-Game.ItemRepository.define('Staff of Energy Bolt', {
-	name: 'Staff of Energy Bolt',
+Game.ItemRepository.define('bow', {
+	name: 'bow',
+	character: ['}','='],
+	itemGroup: 'weapon',
+	forground: 'grey',
+	rangedAttackValue: 4,
+	wieldable: true,
+	ranged: true,
+	ammoType: 'arrow',
+	mixins: [Game.ItemMixins.Equippable]
+});
+
+Game.ItemRepository.define('Wand of Energy Bolt', {
+	name: 'Wand of Energy Bolt',
 	character: ['!'],
 	itemGroup: 'weapon',
 	foreground: 'yellow',

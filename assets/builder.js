@@ -1,9 +1,12 @@
-Game.Builder = function(width, height, depth){
+Game.Builder = function(width, height, depth, options){
 	this._width = width;
 	this._height = height;
 	this._depth = depth;
 	this._tiles = new Array(depth);
 	this._regions = new Array(depth);
+	
+	
+	
 	
 	// Insantiate the arrays to be multi-dimensional
 	for (let z = 0; z < depth; z++){
@@ -25,6 +28,15 @@ Game.Builder = function(width, height, depth){
 		this._setupRegions(z);
 	}
 	this._connectAllRegions();
+	
+	this._lavaPool(3);
+	this._lavaPool(4);
+	this._lavaPool(4);
+	this._lavaPool(5);
+	this._lavaPool(5);
+	this._lavaPool(6);
+	this._lavaPool(6);
+	this._lavaPool(6);
 	
 };
 
@@ -208,3 +220,38 @@ Game.Builder.prototype._connectAllRegions = function(){
 	}
 }// connectAllRegions()
 
+Game.Builder.prototype._lavaPool = function(z){
+	
+	let x,y;
+	
+	do{
+		x = Math.floor(Math.random() * this._width);
+		y = Math.floor(Math.random() * this._height);
+	} while(this._tiles[z][x][y] !== Game.Tile.floorTile);
+	
+	this._tiles[z][x][y] = Game.Tile.lavaTile;
+	
+	
+	let numberOfLavaTiles = Math.floor(Math.random() * 6) + 8;
+	
+	for (let i = 0; i < numberOfLavaTiles; ){	// increment i manually
+		let dx = Math.floor(Math.random() * 3) -1;
+		let dy = Math.floor(Math.random() * 3) -1;
+		x = Math.max(0, Math.min(this._width-1, x+dx));
+		y = Math.max(0, Math.min(this._height-1, y+dy));
+		if(this._tiles[z][x][y] !== Game.Tile.lavaTile){
+			this._tiles[z][x][y] = Game.Tile.lavaTile;
+			if(y < this._height-2) { this._tiles[z][x][y+1] = Game.Tile.lavaTile; }
+			if(y > 0) { this._tiles[z][x][y-1] = Game.Tile.lavaTile; }
+			if(x < this._width-2) { this._tiles[z][x+1][y] = Game.Tile.lavaTile; }
+			if(x > 0) { this._tiles[z][x-1][y] = Game.Tile.lavaTile; }
+			i++;
+		}
+	}
+	
+	
+	console.log(x,y,z);
+	
+	
+	
+}

@@ -79,7 +79,7 @@ Game.Tile.stairsDownTile = new Game.Tile({
 Game.Tile.lavaTile = new Game.Tile({
 	name: 'lava',
 	character: String.fromCharCode(6278),
-	foreground: 'orangered',
+	foreground: 'red',
 	walkable: false,
 	flyable: true,
 	blocksLight: false

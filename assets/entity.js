@@ -39,6 +39,9 @@ Game.Entity.prototype.tryMove = function(x, y, z) {
 	var map = this.getMap()
 	var tile = map.getTile(x, y, this.getZ());
 	var target = map.getEntityAt(x, y, this.getZ());
+	
+	if(this.hasMixin('Rooted')){ return false; }
+	
 	// If we're trying to change Z coord, make sure we're on
 	// the right kind of stairs
 	if (z < this.getZ()){

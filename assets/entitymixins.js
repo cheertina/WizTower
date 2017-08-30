@@ -272,26 +272,6 @@ Game.EntityMixins.FoodConsumer = { // Entity can/must eat
 	}
 };
 
-/*  DEPRECATED - put corpses in the loot table
-Game.EntityMixins.CorpseDropper = { // Entity can drop a corpse when killed
-	name: 'CorpseDropper',
-	init: function(template) {
-		// % chance to drop corpse
-		this._corpseDropRate = template['corpseDropRate'] || 100;
-	},
-	tryDropCorpse: function() {
-		if (Math.round(Math.random() * 100) < this._corpseDropRate) {
-			// Create a new corpse item and drop it
-			this._map.addItem(this.getPos().str, 
-				Game.ItemRepository.create('corpse', {
-					name: this._name + ' corpse',
-					foreground: this._foreground
-				}));
-		}
-	}
-}
-*/
-
 Game.EntityMixins.LootDropper = {
 	name: 'LootDropper',
 	init: function(template) {
@@ -332,9 +312,16 @@ Game.EntityMixins.Trample = {	// This entity can move into an occupied space if 
 	name: 'Trample'
 };
 
-Game.EntityMixins.Flying = {
+Game.EntityMixins.Flying = {	// This entity can travel over water and lava
 	name: 'Flying'
 }
+
+Game.EntityMixins.Rooted = {	// This otherwise mobile entity is stuck in place
+	name : 'Rooted'
+}
+
+
+
 // XP, Levels, and Stats
 Game.EntityMixins.ExperienceGainer = {
 	name: 'ExperienceGainer',

@@ -157,26 +157,11 @@ Game.Map.prototype.populate = function(){
 }
 
 Game.Map.prototype.debugPopulate = function() {
-	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook2'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook2'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook2'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbook2'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('coin'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
-	this.addItemAtRandomPosition(Game.ItemRepository.create('rock'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbookRed'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbookBlue'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbookBlack'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbookWhite'), 0);
+	this.addItemAtRandomPosition(Game.ItemRepository.create('spellbookGreen'), 0);
 }
 
 Game.Map.prototype.simplePopulate = function() {

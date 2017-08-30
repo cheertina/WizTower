@@ -8,7 +8,7 @@ Game.Magic = function(){
 	this.activeSpells = [];
 };
 
-Game.Magic.prototype.increaseMaxMana = function(color, delta = 5){
+Game.Magic.prototype.increaseMaxMana = function(color, delta = 1){
 	if( color == 'black' ||
 	color == 'white' ||
 	color == 'green' ||
@@ -168,8 +168,8 @@ Game.SpellBook.define('holy strength', {
 	name: 'Holy Strength',
 	description: "Increases attack and defense",
 	targets: 'self',
-	manaCost: { black: 1 },
-	manaUsed: { black: 1 },
+	manaCost: { white: 1 },
+	manaUsed: { white: 1 },
 	activeName: 'holy strength',
 	bonus: {
 		mixins: [],
@@ -193,7 +193,8 @@ Game.SpellBook.define('tunneling', {
 	description: "Allows the caster to dig through walls",
 	targets: 'self',
 	manaCost: { red: 1 },
-	manaUsed: { red: 1 },
+	//manaUsed: { red: 1 },
+	manaUsed: { },
 	activeName: 'tunneling',
 	bonus: { mixins: [Game.EntityMixins.Digger] }
 });
@@ -304,6 +305,31 @@ Game.SpellBook.define('rancor', {
 		mixins: [Game.EntityMixins.Trample],
 		stats: {attack: 2}
 	}
+});
+
+Game.SpellBook.define('biostasis', {
+	name: 'Biostasis',
+	description: "Grants regeneration and restores hunger, but target cannot move",
+	targets: 'ranged',
+	manaCost: { green: 2 },
+	onCast: function(target, caster){ 
+		target.addMixin(Game.EntityMixins.Rooted);
+		Game.sendMessage(target, "You send roots deep into the ground and begin to absorb nutrients.")
+	},
+	buff: function(target){
+		this.name = 'Biostasis';
+		this.duration = 20;
+		this.target = target;
+		this.onExpire = function(){ 
+			this.target.removeMixin(Game.EntityMixins.Rooted); 
+			Game.sendMessage(this.target, "Your roots shrivel and crumble.  You can move again.")
+		};
+		this.perTurn = function() {
+			this.target.heal(1);
+			if(this.target.hasMixin('FoodConsumer')) { this.target.modifyFullnessBy(5); }
+		}
+	}
+	
 });
 
 // Black

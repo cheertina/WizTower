@@ -77,7 +77,8 @@ Game.Screen.playScreen = {
     _player: null,
 	_gameEnded: false,
 	_subScreen: null,
-	_DEBUG_PLAY: true,
+	_DEBUG_PLAY: false,
+	_DEBUG_HUNGER: false,
 	
 	// For looking around, mode='look'
 	_cursor: {},
@@ -249,7 +250,7 @@ Game.Screen.playScreen = {
 			let status2_1 = vsprintf('Level: %d, XP: %d, Altars Available: %d', [this._player.getLevel(), this._player.getXp(), this._player.getAltarsAvailable()]);
 			display.drawText(0, screenHeight+1, '%c{white}%b{black}' + status2_1);
 			// show hunger in row two, right side
-			let hungerState = this._player.getHungerState(false);	// use true for numeric debug. turn counting
+			let hungerState = this._player.getHungerState(_DEBUG_HUNGER);	// use true for numeric debug. turn counting
 			display.drawText(screenWidth - hungerState.length, screenHeight+1, '%c{white}%b{black}' + hungerState);
 		
 			// Stats, row 3 - mana
@@ -305,6 +306,7 @@ Game.Screen.playScreen = {
 			} else {
 				lookText = 'Unexplored';
 			}
+			display.drawText(0, screenHeight, vsprintf('(%d,%d)', [this._cursor.x, this._cursor.y]));
 			display.drawText(0, screenHeight+1, lookText);
 		}
 		if (this._mode == 'target') {
@@ -625,6 +627,7 @@ Game.Screen.playScreen = {
 		this._player.tryMove(newX, newY, newZ, this._map);
 		
 	},	// move()
+	
 	cursorMove: function(dX, dY){
 		let newX = Math.max(0,Math.min(this._map.getWidth(), this._cursor.x + dX));
 		let newY = Math.max(0,Math.min(this._map.getHeight(), this._cursor.y + dY));

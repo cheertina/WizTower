@@ -69,6 +69,7 @@ Game.EntityRepository.define('bat', {
 	mixins: [
 		Game.EntityMixins.TaskActor,	// No tasks, so just wander
 		Game.EntityMixins.LootDropper,
+		Game.EntityMixins.Flying,
 		Game.EntityMixins.Attacker,	Game.EntityMixins.Destructible,
 		Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer
 		]
