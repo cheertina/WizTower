@@ -44,14 +44,14 @@ Game.Screen.helpScreen = {
 		display.drawText(2,i++, "Move with numpad");
 		display.drawText(2,i++, "Press 0 or 5 to wait a round");
 		display.drawText(1,i++, "%c{white}Actions");
-		display.drawText(2,i++, "C: Cast spell");
-		display.drawText(2,i++, "D: Drop item");
-		display.drawText(2,i++, "E: Eat consumable");
-		display.drawText(2,i++, "I: View inventory");
-		display.drawText(2,i++, "L: Enter/Exit 'Look' mode");
-		display.drawText(2,i++, "R: Ranged Attack (requires ranged weapon)");
-		display.drawText(2,i++, "W: Wield/wear");
-		display.drawText(2,i++, "Y: Read Book");
+		display.drawText(2,i++, "c: Cast spell");
+		display.drawText(2,i++, "d: Drop item");
+		display.drawText(2,i++, "e: Eat consumable");
+		display.drawText(2,i++, "i: View inventory");
+		display.drawText(2,i++, "l: Enter/Exit 'Look' mode");
+		display.drawText(2,i++, "r: Ranged Attack (requires ranged weapon)");
+		display.drawText(2,i++, "W/w: Wear/wield");
+		display.drawText(2,i++, "y: Read Book");
 		display.drawText(2,i++, ",: Pick up item");
 		display.drawText(0,i++, ""); // Blank line
 		display.drawText(1,i++, "%c{white}Other");
@@ -74,7 +74,7 @@ Game.Screen.helpScreen = {
 // Define our playing screen
 Game.Screen.playScreen = {
 	_map: null,
-    _player: null,
+	_player: null,
 	_gameEnded: false,
 	_subScreen: null,
 	_DEBUG_PLAY: false,
@@ -250,7 +250,7 @@ Game.Screen.playScreen = {
 			let status2_1 = vsprintf('Level: %d, XP: %d, Altars Available: %d', [this._player.getLevel(), this._player.getXp(), this._player.getAltarsAvailable()]);
 			display.drawText(0, screenHeight+1, '%c{white}%b{black}' + status2_1);
 			// show hunger in row two, right side
-			let hungerState = this._player.getHungerState(_DEBUG_HUNGER);	// use true for numeric debug. turn counting
+			let hungerState = this._player.getHungerState(this._DEBUG_HUNGER);	// use true for numeric debug. turn counting
 			display.drawText(screenWidth - hungerState.length, screenHeight+1, '%c{white}%b{black}' + hungerState);
 		
 			// Stats, row 3 - mana
