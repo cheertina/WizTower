@@ -981,7 +981,7 @@ Game.Screen.ItemListScreen.prototype.render = function(display) {
 			dispStr = letter + ' ' + selectionState+ '   ' + this._items[slot].describe() + suffix;
 			display.drawText(0, row, dispStr);
 			// Display the character for the item, in the right color
-			display.draw(4, row, this._items[slot].getChar(), this._items[slot].getForeground());
+			display.draw(4, row, this._items[slot].getChar(), this._items[slot].getForeground(), this._items[slot].getBackground());
 			
 		}
 		row++;
