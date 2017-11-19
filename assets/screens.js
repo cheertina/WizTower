@@ -49,6 +49,7 @@ Game.Screen.helpScreen = {
 		display.drawText(2,i++, "e: Eat consumable");
 		display.drawText(2,i++, "i: View inventory");
 		display.drawText(2,i++, "l: Enter/Exit 'Look' mode");
+		display.drawText(2,i++, "p: Pray at altar");
 		display.drawText(2,i++, "r: Ranged Attack (requires ranged weapon)");
 		display.drawText(2,i++, "W/w: Wear/wield");
 		display.drawText(2,i++, "y: Read Book");
