@@ -86,7 +86,8 @@ Game.Map.enemyAssign = {
 	level2: [
 		{name: 'bat',	chance: 3},
 		{name: 'newt',	chance: 3},
-		{name: 'kobold',chance: 3},
+		{name: 'kobold',chance: 2},
+		{name: 'goblin',chance: 2},
 		{name: 'fungus',chance: 1},
 		{name: 'rat',	chance: 2},
 	],
@@ -94,6 +95,7 @@ Game.Map.enemyAssign = {
 		{name: 'bat',	chance: 3},
 		{name: 'newt',	chance: 3},
 		{name: 'kobold',chance: 4},
+		{name: 'goblin',chance: 3},
 		{name: 'fungus',chance: 1},
 		{name: 'rat',	chance: 2},
 	],
@@ -102,9 +104,11 @@ Game.Map.enemyAssign = {
 		{name: 'rat',	chance: 3}, 
 		{name: 'newt',	chance: 1},
 		{name: 'kobold',chance: 5},
+		{name: 'goblin',chance: 4},
 		{name: 'fungus',chance: 1},
 	],
 	other: [
+		{name: 'goblin', chance: 1},
 		{name: 'kobold', chance: 1}
 	]
 	

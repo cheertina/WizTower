@@ -127,9 +127,9 @@ Game.EntityRepository.define('kobold', {
 	},
 	lootTable: [ 
 		{ item: 'random', chance: 100 },
-		{ item: 'random', itemGroup: 'weapon', chance: 100 },
+		{ item: 'random', itemGroup: 'weapon', chance: 60 },
 		{ item: 'coin', chance: 20 },
-		{ item: 'corpse', chance: 100}
+		{ item: 'corpse', chance: 80}
 	],
     tasks: ['hunt', 'wander'],
 	priorities: {high: ['player'], low: ['neutral']},
@@ -139,7 +139,35 @@ Game.EntityRepository.define('kobold', {
         Game.EntityMixins.Attacker, Game.EntityMixins.Destructible,
         Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer,
 		Game.EntityMixins.LootDropper]
-}, { disableRandomCreation: true });
+}, { disableRandomCreation: true });  //Why?
+
+Game.EntityRepository.define('goblin', {
+	name: 'goblin',
+	character: 'g',
+	foreground: 'green',
+	stats: {
+		maxHP: 12,
+		attack: 6,
+		sightRadius: 5,
+	},
+	lootTable: [
+	{ item: 'random', chance: 100 },
+		{ item: 'random', itemGroup: 'weapon', chance: 40 },
+		{ item: 'coin', chance: 20 },
+		{ item: 'corpse', chance: 80}
+	],
+	tasks: ['hunt', 'wander'],
+	priorities: {high: ['player']},
+    mixins: [
+		Game.EntityMixins.TaskActor,
+		Game.EntityMixins.Sight,
+        Game.EntityMixins.Attacker, Game.EntityMixins.Destructible,
+        Game.EntityMixins.ExperienceGainer,	Game.EntityMixins.RandomStatGainer,
+		Game.EntityMixins.LootDropper]
+});
+
+
+
 
 // Nests
 Game.EntityRepository.define('newtNest', {

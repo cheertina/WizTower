@@ -247,8 +247,8 @@ Game.SpellBook.define('blink', {
 });
 
 Game.SpellBook.define('flying', {
-	name: 'flying',
-	decription: "Allows the caster to fly over obstacles",
+	name: 'Flying',
+	description: "Allows the caster to fly over obstacles",
 	targets: 'self',
 	manaCost: { blue: 1 },
 	onCast: function(target, caster){

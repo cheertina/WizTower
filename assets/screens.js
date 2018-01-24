@@ -101,7 +101,7 @@ Game.Screen.playScreen = {
 		// Start the map's engine
 		this._map.getEngine().start();
 		
-		/*
+		/* DEBUG
 		this._player.learnSpell('blink');
 		this._player.learnSpell('tunneling');
 		this._player.learnSpell('regen');
@@ -875,12 +875,14 @@ Game.Screen.learnSpellScreen = {
 		
 		let letters = 'abcdefghijklmnopqrstuvwxyz';
 		let row = 2;
-		for (let i = 0; i < this._spellList.length; i++) {
+		let spellList = Game.Screen.learnSpellScreen._spellList;
+		for (let i = 0; i < spellList.length; i++) {
+			let spell = spellList[i];
 			let letter = letters.substring(i,i+1);
-			let cost = Game.SpellBook.getManaCost(this._spellList[i], true);
-			let reserved = Game.SpellBook.getManaUsed(this._spellList[i], true);
-			let name = Game.SpellBook.getName(this._spellList[i], true);
-			let desc = Game.SpellBook.getDesc(this._spellList[i])
+			let cost = Game.SpellBook.getManaCost(spell, true);
+			let reserved = Game.SpellBook.getManaUsed(spell, true);
+			let name = Game.SpellBook.getName(spell, true);
+			let desc = Game.SpellBook.getDesc(spell)
 			let dispStr = letter + " - " + cost + reserved + " " + name + " - " + desc;
 			
 			display.drawText(0,row+i, dispStr);
@@ -927,7 +929,7 @@ Game.Screen.learnSpellScreen = {
 Game.Screen.ItemListScreen = function(template){
 	this._caption = template['caption'];
 	this._okFunction = template['ok'];
-	// Function to filter items for spcific lists (edible, weapons, etc.)
+	// Function to filter items for specific lists (edible, weapons, etc.)
 	// By default, use the identity function (all items)
 	this._filterFunction = template['filterFunction'] || function(x) { return x; }
 	// Whether items are selectable
