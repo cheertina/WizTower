@@ -147,7 +147,7 @@ Game.SpellBook.getSpellList = function(){
 |*| 	onCast - one-shot events
 |*| 
 |*| 	buff - anything that requires a timer or lasting effect - this is actually a constructor function
-|*| 	for an object that contains the following elements, and spells are not the only way to get them
+|*| 	  for an object that contains the following elements, and spells are not the only way to get them
 |*|			duration - how many turns it lasts; -1 for unlimited
 |*| 		onExpire - delayed one-shot events
 |*| 		perTurn - repeated active effects
@@ -291,6 +291,31 @@ Game.SpellBook.define('regen', {
 		this.perTurn = function(){	// 'this.target' refers to the target that is part of the 'buff' object
 			if (this.duration % 5 == 0){ this.target.heal(1); }
 		}
+	}
+});
+
+Game.SpellBook.define('wild growth', {
+	name: 'Wild Growth',
+	description: "Increases mana regen",
+	targets: 'self',
+	manaCost: { green: 1 },
+	onCast: function(target, caster){
+		target._magic.maxMana.green++;
+	},
+	buff: function(target){
+		this.name = 'Wild Growth';
+		this.duration = 20;
+		this.target = target;
+		
+		this.onExpire = function(){
+			target._magic.maxMana.green--;
+			if(target._magic.maxMana.green < 0){
+				target._magic.maxMana.green = 0;
+			}
+			Game.sendMessage( this.target, "Wild Growth fades."); 
+		};
+		
+		
 	}
 });
 
