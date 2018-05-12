@@ -32,7 +32,7 @@ Game.Screen.startScreen = {
 	}
 }
 
-// Define our initial start screen
+// Define our help screen
 Game.Screen.helpScreen = {
 	enter: function(){ console.log("Entered the help screen."); },
 	exit: function(){ console.log("Exited the help screen"); },

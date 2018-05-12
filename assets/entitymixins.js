@@ -79,9 +79,17 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 		if (!this._stats.hasOwnProperty('maxHp')) { this._stats.maxHp = 10; }
 		if (!this._stats.hasOwnProperty('hp')) { this._stats.hp = this._stats.maxHp; }
 		if (!this._stats.hasOwnProperty('defense')) { this._stats.defense = 0; }
+		if (!this._stats.hasOwnProperty('expValue')) { this.expValue = 10; }
+		
+		/* Old exp calculation
+		let exp = this.getMaxHp() + this.getDefenseValue();
+		if (this.hasMixin('Attacker')) { exp += this.getAttackValue(); }
+		if (this.hasMixin('ExperienceGainer')) { exp -= (attacker.getLevel() - this.getLevel()) * 3;}
+		*/
 	},
 	getHp: function() {	return this._stats.hp; },
 	getMaxHp: function(){ return this._stats.maxHp; },
+	getExpValue: function() {return this._stats.expValue; },
 	getDefenseValue: function(){
 		let modifier = 0;
 		// Take weapons/armor into consideration, if neccessary
@@ -98,15 +106,9 @@ Game.EntityMixins.Destructible = { // Entity can take damage and be destroyed
 			Game.sendMessage(attacker, 'You kill the %s!', [this.getName()]);
 			
 			if (this.hasMixin(Game.EntityMixins.LootDropper)) { this.tryDropLoot();	}
-			if (this.hasMixin(Game.EntityMixins.CorpseDropper)) { this.tryDropCorpse();	}
-			
-            this.kill();
-			if(attacker.hasMixin('ExperienceGainer')){
-				let exp = this.getMaxHp() + this.getDefenseValue();
-				if (this.hasMixin('Attacker')) { exp += this.getAttackValue(); }
-				if (this.hasMixin('ExperienceGainer')) { exp -= (attacker.getLevel() - this.getLevel()) * 3;}
-				if (exp > 0) { attacker.giveXp(exp); }
-			}
+            
+			this.kill();
+			if(attacker.hasMixin('ExperienceGainer')){ attacker.giveXp(this.getExpValue()); }
 		}
 	},
 	heal: function(healVal){  // healVal can be negative for non-attack damage (starving, poison, etc.)

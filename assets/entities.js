@@ -47,6 +47,7 @@ Game.EntityRepository.define('fungus', {
 	speed: 250,
 	stats: {
 		maxHp: 10,
+		expValue: 2,
 	},
 	mixins: [
 		Game.EntityMixins.Spawner,
@@ -64,6 +65,7 @@ Game.EntityRepository.define('bat', {
 	stats: {
 		maxHp: 5,
 		attack: 4,
+		expValue: 6,
 	},
 	lootTable: [ {item: 'corpse', chance: 100} ],
 	mixins: [
@@ -84,6 +86,7 @@ Game.EntityRepository.define('newt', {
 	stats: {
 		maxHp: 3,
 		attack: 2,
+		expValue: 3,
 	},
 	lootTable: [ {item: 'corpse', chance: 100} ],
 	mixins: [
@@ -103,6 +106,7 @@ Game.EntityRepository.define('rat',{
 	stats: {
 		maxHp: 4,
 		attack: 2,
+		expValue: 5,
 	},
 	lootTable: [{item: 'corpse', chance: 100}],
 	tasks: ['hunt', 'wander'],
@@ -124,6 +128,7 @@ Game.EntityRepository.define('kobold', {
 		maxHp: 6,
 		attack: 4,
 		sightRadius: 5,
+		expValue: 10,
 	},
 	lootTable: [ 
 		{ item: 'random', chance: 100 },
@@ -149,6 +154,7 @@ Game.EntityRepository.define('goblin', {
 		maxHP: 12,
 		attack: 6,
 		sightRadius: 5,
+		expValue: 15,
 	},
 	lootTable: [
 	{ item: 'random', chance: 100 },

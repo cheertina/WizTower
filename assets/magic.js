@@ -300,15 +300,22 @@ Game.SpellBook.define('wild growth', {
 	targets: 'self',
 	manaCost: { green: 1 },
 	onCast: function(target, caster){
+		//Can't cast it if the buff is still there
+		if (target._buffs.hasOwnProperty("Wild Growth")){ return; }
+		
 		target._magic.maxMana.green++;
 	},
 	buff: function(target){
 		this.name = 'Wild Growth';
-		this.duration = 20;
+		this.duration = 50;
 		this.target = target;
 		
+		this.perTurn = function(){
+			Game.sendMessage( this.target, "Remaining wild growth duration "+ this.duration);
+		}
+		
 		this.onExpire = function(){
-			target._magic.maxMana.green--;
+			this.target._magic.maxMana.green--;
 			if(target._magic.maxMana.green < 0){
 				target._magic.maxMana.green = 0;
 			}

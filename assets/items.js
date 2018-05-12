@@ -75,7 +75,7 @@ Game.ItemRepository.define('spellbookGreen', {
 	itemGroup: 'book',
 	character: [String.fromCharCode(9647), String.fromCharCode(991)],
 	foreground: 'lime',
-	spells: ['rancor','regen','biostasis'],
+	spells: ['rancor','wild growth','regen','biostasis'],
 	mixins: [Game.ItemMixins.Spellbook]
 });
 
